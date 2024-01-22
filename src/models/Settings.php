@@ -10,4 +10,12 @@ use craft\base\Model;
  */
 class Settings extends Model
 {
+    public $bearerToken = '';
+
+    public function defineRules(): array
+    {
+        return [
+            [['bearerToken'], 'required']
+        ];
+    }
 }

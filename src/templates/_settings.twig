@@ -3,4 +3,11 @@
 
 {% import '_includes/forms.twig' as forms %}
 
+{{ forms.textField({
+    first: true,
+    label: 'Bearer token',
+    name: 'bearerToken',
+    value: settings.bearerToken
+  }) }}
+
 {# ... #}

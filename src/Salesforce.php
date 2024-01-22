@@ -3,9 +3,14 @@
 namespace brightlabs\craftsalesforce;
 
 use Craft;
-use brightlabs\craftsalesforce\models\Settings;
+use yii\base\Event;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\web\UrlManager;
+use craft\web\twig\variables\Cp;
+use craft\events\RegisterUrlRulesEvent;
+use craft\events\RegisterCpNavItemsEvent;
+use brightlabs\craftsalesforce\models\Settings;
 
 /**
  * Salesforce plugin
@@ -19,6 +24,7 @@ use craft\base\Plugin;
 class Salesforce extends Plugin
 {
     public string $schemaVersion = '1.0.0';
+    public bool $hasCpSection = true;
     public bool $hasCpSettings = true;
 
     public static function config(): array
@@ -39,6 +45,26 @@ class Salesforce extends Plugin
             $this->attachEventHandlers();
             // ...
         });
+
+        Event::on(
+            Cp::class,
+            Cp::EVENT_REGISTER_CP_NAV_ITEMS,
+            function(RegisterCpNavItemsEvent $event) {
+                // $event->navItems[] = [
+                //     'url' => 'salesforce',
+                //     'label' => 'Salesforce Sync',
+                //     'id' => 'nav-salesforce'
+                // ];
+            }
+        );
+
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_CP_URL_RULES,
+            function(RegisterUrlRulesEvent $event) {
+                $event->rules['salesforce'] = 'salesforce/_settings.twig';
+            }
+        );
     }
 
     protected function createSettingsModel(): ?Model
