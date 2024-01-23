@@ -7,6 +7,7 @@ use yii\base\Event;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\web\UrlManager;
+use craft\helpers\UrlHelper;
 use craft\web\twig\variables\Cp;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterCpNavItemsEvent;
@@ -24,7 +25,6 @@ use brightlabs\craftsalesforce\models\Settings;
 class Salesforce extends Plugin
 {
     public string $schemaVersion = '1.0.0';
-    public bool $hasCpSection = true;
     public bool $hasCpSettings = true;
 
     public static function config(): array
@@ -50,21 +50,57 @@ class Salesforce extends Plugin
             Cp::class,
             Cp::EVENT_REGISTER_CP_NAV_ITEMS,
             function(RegisterCpNavItemsEvent $event) {
-                // $event->navItems[] = [
-                //     'url' => 'salesforce',
-                //     'label' => 'Salesforce Sync',
-                //     'id' => 'nav-salesforce'
-                // ];
+                $event->navItems[] = [
+                    'url' => 'salesforce',
+                    'label' => 'Salesforce',
+                    'subnav' => [
+                        'assignments' => [
+                            'label' => 'Assignments',
+                            'url' => 'salesforce/assignments'
+                        ],
+                        'settings' => [
+                            'label' => 'Settings',
+                            'url' => 'salesforce/settings'
+                        ]
+                    ]
+                ];
             }
         );
 
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function(RegisterUrlRulesEvent $event) {
-                $event->rules['salesforce'] = 'salesforce/_settings.twig';
+            function (RegisterUrlRulesEvent $event) {
+                $event->rules['salesforce/assignments'] = 'salesforce/assignments';
+                $event->rules['salesforce/settings'] = 'salesforce/settings';
+                $event->rules['salesforce'] = 'salesforce/settings';
             }
         );
+
+    }
+
+    public function getSettingsResponse(): mixed
+    {
+        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('salesforce/settings'));
+    }
+
+    public function getCpNavItem(): ?array
+    {
+        $nav = parent::getCpNavItem();
+
+        $nav['subnav']['assignments'] = [
+            'label' => 'Assignments',
+            'url' => 'salesforce/assignments'
+        ];
+
+        if (Craft::$app->getUser()->getIsAdmin()) {
+            $nav['subnav']['settings'] = [
+                'label' => 'Settings',
+                'user' => 'salesforce/settings'
+            ];
+        }
+
+        return $nav;
     }
 
     protected function createSettingsModel(): ?Model

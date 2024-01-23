@@ -1,13 +1,18 @@
 {# @var plugin \brightlabs\craftsalesforce\Salesforce #}
 {# @var settings \brightlabs\craftsalesforce\models\Settings #}
 
+{% extends "_layouts/cp.twig" %}
 {% import '_includes/forms.twig' as forms %}
 
-{{ forms.textField({
-    first: true,
-    label: 'Bearer token',
-    name: 'bearerToken',
-    value: settings.bearerToken
-  }) }}
+{% set title = "Settings"|t('salesforce') %}
+{% set selectedSubnavItem = 'settings' %}
 
-{# ... #}
+
+{% block content %}
+{{ forms.textField({
+  first: true,
+  label: 'Bearer token',
+  name: 'bearerToken',
+  value: ''
+}) }}
+{% endblock %}
