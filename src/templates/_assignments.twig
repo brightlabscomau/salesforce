@@ -1,10 +1,16 @@
-{% extends "_layouts/cp.twig" %}
-{% import '_includes/forms.twig' as forms %}
+{% extends '_layouts/elementindex.twig' %}
 
 {% set title = "Assignments"|t('salesforce') %}
 {% set selectedSubnavItem = 'assignments' %}
+{% set elementType = 'brightlabs\\craftsalesforce\\elements\\Assignment' %}
 
 
-{% block content %}
-  <p>assignments</p>
+{% block actionButton %}
+    {{ tag('a', {
+        class: 'btn submit add icon',
+        href: actionUrl('elements/create', {
+            elementType: elementType
+        }),
+        text: 'New assignment'|t('salesforce'),
+    }) }}
 {% endblock %}

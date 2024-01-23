@@ -21,4 +21,13 @@ class SettingsController extends Controller
             View::TEMPLATE_MODE_CP
         );
     }
+
+    public function actionFields(): Response
+    {
+        return $this->renderTemplate(
+            'salesforce/_assignment-fields',
+            [],
+            View::TEMPLATE_MODE_CP
+        );
+    }
 }

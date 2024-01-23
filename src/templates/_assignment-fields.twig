@@ -1,0 +1,20 @@
+{% extends "_layouts/cp.twig" %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = "Fields"|t('salesforce') %}
+{% set selectedSubnavItem = 'assignmentFields' %}
+
+{% set fullPageForm = true %}
+
+{% block content %}
+
+{{ actionInput('salesforce/assignments/save') }}
+{{ redirectInput('salesforce/fields') }}
+
+{{ forms.fieldLayoutDesignerField({
+  fieldLayout: craft.app.fields.getLayoutByType(
+    'brightlabs\\craftsalesforce\\elements\\Assignment'
+  ),
+}) }}
+
+
+{% endblock content %}
