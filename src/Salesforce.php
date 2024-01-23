@@ -84,25 +84,6 @@ class Salesforce extends Plugin
         return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('salesforce/settings'));
     }
 
-    public function getCpNavItem(): ?array
-    {
-        $nav = parent::getCpNavItem();
-
-        $nav['subnav']['assignments'] = [
-            'label' => 'Assignments',
-            'url' => 'salesforce/assignments'
-        ];
-
-        if (Craft::$app->getUser()->getIsAdmin()) {
-            $nav['subnav']['settings'] = [
-                'label' => 'Settings',
-                'user' => 'salesforce/settings'
-            ];
-        }
-
-        return $nav;
-    }
-
     protected function createSettingsModel(): ?Model
     {
         return Craft::createObject(Settings::class);
