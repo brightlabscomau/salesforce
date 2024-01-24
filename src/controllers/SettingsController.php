@@ -3,6 +3,7 @@
 namespace brightlabs\craftsalesforce\controllers;
 
 use brightlabs\craftsalesforce\Salesforce;
+use Craft;
 use craft\web\Controller;
 use yii\web\Response;
 use craft\web\View;
@@ -17,9 +18,25 @@ class SettingsController extends Controller
 
         return $this->renderTemplate(
             'salesforce/_settings',
-            [],
+            ['settings' => Salesforce::getInstance()->settings],
             View::TEMPLATE_MODE_CP
         );
+    }
+
+    public function actionSave(): Response
+    {
+
+        $settings = Salesforce::getInstance()->settings;
+
+        $settings->bearerToken = $this->request->getBodyParam('bearerToken');
+
+        $path = "plugins.salesforce.settings";
+
+        Craft::$app->getProjectConfig()->set($path, [
+            'bearerToken' => $settings->bearerToken
+        ]);
+
+        return $this->redirectToPostedUrl();
     }
 
     public function actionFields(): Response

@@ -47,6 +47,7 @@ class Salesforce extends Plugin
 
     public function init(): void
     {
+
         parent::init();
 
         // Defer most setup tasks until Craft is fully initialized
@@ -120,8 +121,9 @@ class Salesforce extends Plugin
                 $event->rules['salesforce/assignments'] = 'salesforce/assignments';
                 $event->rules['salesforce/assignments/save'] = 'salesforce/assignments/save';
                 $event->rules['salesforce/settings'] = 'salesforce/settings';
-                $event->rules['salesforce'] = 'salesforce/settings';
+                $event->rules['salesforce'] = 'salesforce/assignments';
                 $event->rules['salesforce/fields'] = 'salesforce/settings/fields';
+                $event->rules['salesforce/test'] = 'salesforce/test';
             }
         );
 

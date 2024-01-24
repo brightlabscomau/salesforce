@@ -6,13 +6,18 @@
 
 {% set title = "Settings"|t('salesforce') %}
 {% set selectedSubnavItem = 'settings' %}
-
+{% set fullPageForm = true %}
 
 {% block content %}
-{{ forms.textField({
+
+{{ actionInput('salesforce/settings/save') }}
+
+{{ forms.autosuggestField({
   first: true,
   label: 'Bearer token',
   name: 'bearerToken',
-  value: ''
+  value: settings.bearerToken,
+  required: true,
+  suggestEnvVars: true
 }) }}
 {% endblock %}
