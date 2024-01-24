@@ -1,8 +1,7 @@
 {% extends '_layouts/cp.twig' %}
 {% import '_includes/forms.twig' as forms %}
 
-{% set title = 'Edit Assignment'|t('salesforce') %}
-{% set fullPageForm = true %}
+{% set title = 'View Assignment'|t('salesforce') %}
 
 {% block content %}
     {{ actionInput('salesforce/assignments/save') }}
@@ -23,6 +22,16 @@
         value: assignment.title,
         required: true,
         errors: assignment.getErrors('title'),
+      }) }}
+
+      {{ forms.textField({
+        label: 'Salesforce Id'|t('salesforce'),
+        instructions: 'The name of the event'|t('salesforce'),
+        id: 'salesforce_id',
+        name: 'salesforce_id',
+        value: assignment.salesforce_id,
+        required: true,
+        errors: assignment.getErrors('salesforce_id'),
       }) }}
 
     {{ forms.textField({

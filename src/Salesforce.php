@@ -141,15 +141,15 @@ class Salesforce extends Plugin
             FieldLayout::class,
             FieldLayout::EVENT_DEFINE_NATIVE_FIELDS,
             function (DefineFieldLayoutFieldsEvent $event) {
-                $fieldLayout = $event->sender;
+                // $fieldLayout = $event->sender;
 
-                $event->fields[] = [
-                    'class' => TextField::class,
-                    'label' => 'Title',
-                    'attribute' => 'title',
-                    'type' => 'text',
-                    'mandatory' => true,
-                ];
+                // $event->fields[] = [
+                //     'class' => TextField::class,
+                //     'label' => 'Title',
+                //     'attribute' => 'title',
+                //     'type' => 'text',
+                //     'mandatory' => true,
+                // ];
             }
         );
     }

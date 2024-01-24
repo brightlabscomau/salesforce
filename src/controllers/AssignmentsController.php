@@ -52,6 +52,7 @@ class AssignmentsController extends Controller
         $assignmentId = $this->request->getBodyParam('assignmentId');
         $title = $this->request->getBodyParam('title');
         $country = $this->request->getBodyParam('country');
+        $salesforce_id = $this->request->getBodyParam('salesforce_id');
         $isFresh = $this->request->getParam('fresh');
 
         if ($assignmentId && !$isFresh) {
@@ -64,7 +65,8 @@ class AssignmentsController extends Controller
         }
 
         $assignment->title = $title;
-        // $assignment->country = $country;
+        $assignment->salesforce_id = $salesforce_id;
+        $assignment->country = $country;
 
         if (!Salesforce::getInstance()->assignment->saveAssignment($assignment)) {
             if ($this->request->acceptsJson) {
@@ -87,12 +89,4 @@ class AssignmentsController extends Controller
         $this->setSuccessFlash(Craft::t('salesforce', 'Assignment saved.'));
         return $this->redirectToPostedUrl($assignment);
     }
-
-    // public function actionSave(): void
-    // {
-    //     $fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
-    //     $fieldLayout->type = Assignment::class;
-
-    //     Craft::$app->getFields()->saveLayout($fieldLayout);
-    // }
 }

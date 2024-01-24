@@ -26,6 +26,7 @@ class Install extends Migration
         // Create the Assignments table:
         $this->createTable($this->table, [
             'id' => $this->primaryKey(),
+            'salesforce_id' => $this->char(100)->notNull(),
             'country' => $this->char(100)->notNull(),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),
@@ -52,8 +53,8 @@ class Install extends Migration
     public function safeDown(): bool
     {
         // Place uninstallation code here...
-        // $this->dropAllForeignKeysToTable($this->table);
-        // $this->dropTableIfExists($this->table);
+        $this->dropAllForeignKeysToTable($this->table);
+        $this->dropTableIfExists($this->table);
 
         return true;
     }

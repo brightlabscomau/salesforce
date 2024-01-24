@@ -8,6 +8,8 @@ use craft\console\Controller;
 use craft\db\Query;
 use craft\db\Table;
 use craft\helpers\Console;
+use yii\base\Exception as BaseException;
+use yii\console\Exception;
 use yii\console\ExitCode;
 
 class SyncController extends Controller
@@ -35,31 +37,30 @@ class SyncController extends Controller
         foreach ($response->records as $index => $record) {
 
             $id = (new Query())
-            ->select(['elementId'])
-            ->from([Table::CONTENT])
-            ->where(['title' => $record->Name])
+            ->select(['id'])
+            ->from(['salesforce_assignments'])
+            ->where(['salesforce_id' => $record->Id])
             ->scalar();
-            dd($id);
-            $assignment = Salesforce::getInstance()->assignment->getAssignmentById($id);
 
-            if (empty($assignment)) {
-
+            if (!empty($id)) {
+                $assignment = Salesforce::getInstance()->assignment->getAssignmentById($id);
+            } else {
+                $assignment = new Assignment();
             }
-            dd($assignment);
 
-            // if (empty($assignment)) {
-            //     $assignment = new Assignment();
-            // }
+            $assignment->title = $record->Name;
+            $assignment->salesforce_id = (string) $record->Id;
+            $assignment->country = (string) 'Australia';
 
-            // $assignment->title = $record->Name;
+            Salesforce::getInstance()->assignment->saveAssignment($assignment);
 
-            // Salesforce::getInstance()->assignment->saveAssignment($assignment);
-
-            // if ($index > 4) {
-            //     break;
-            // }
+            if ($index > 4) {
+                break;
+            }
         }
     }
+
+    // protected function
 
     protected function fetchData($query=null) {
         $bearerToken = Salesforce::getInstance()->settings->getBearerToken();
@@ -67,7 +68,7 @@ class SyncController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://australianvolunteers--uatpc2.sandbox.my.salesforce.com/services/data/v60.0/query/?q=SELECT+Name+FROM+Recruitment__c',
+        CURLOPT_URL => 'https://australianvolunteers--uatpc2.sandbox.my.salesforce.com/services/data/v60.0/query/?q=SELECT+Id,Name+FROM+Recruitment__c',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -84,6 +85,26 @@ class SyncController extends Controller
 
         curl_close($curl);
 
-        return json_decode($response);
+        $jsonResponse = json_decode($response);
+
+        if ($jsonResponse->totalSize ?? false) {
+            return $jsonResponse;
+        }
+
+
+        if (
+            ($jsonResponse[0]->errorCode ?? false) &&
+            $jsonResponse[0]->errorCode == 'INVALID_AUTH_HEADER'
+        ) {
+            $this->stderr("Error: " . $jsonResponse[0]->message . "\n", Console::FG_RED);
+
+            if ($jsonResponse[0]->errorCode == 'INVALID_AUTH_HEADER') {
+                $this->stderr("Hint: Check if you've provided bearer token and it is valid.\n\n", Console::FG_YELLOW);
+            }
+
+
+            throw new BaseException($jsonResponse[0]->message);
+        }
+
     }
 }
