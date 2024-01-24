@@ -10,13 +10,21 @@ use craft\db\Migration;
  */
 class Install extends Migration
 {
+    protected $table = '{{%salesforce_assignments}}';
+
     /**
      * @inheritdoc
      */
     public function safeUp(): bool
     {
+
+        if ($this->db->tableExists($this->table)) {
+            return true;
+        }
+
+
         // Create the Assignments table:
-        $this->createTable('{{%salesforce_assignments}}', [
+        $this->createTable($this->table, [
             'id' => $this->primaryKey(),
             'country' => $this->char(100)->notNull(),
             'dateCreated' => $this->dateTime()->notNull(),
@@ -27,7 +35,7 @@ class Install extends Migration
         // Give it a foreign key to the elements table:
         $this->addForeignKey(
             null,
-            '{{%salesforce_assignments}}',
+            $this->table,
             'id',
             '{{%elements}}',
             'id',
@@ -44,6 +52,8 @@ class Install extends Migration
     public function safeDown(): bool
     {
         // Place uninstallation code here...
+        // $this->dropAllForeignKeysToTable($this->table);
+        // $this->dropTableIfExists($this->table);
 
         return true;
     }
