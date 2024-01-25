@@ -272,14 +272,14 @@ class Assignment extends Element
             'country' => $this->country,
         ]);
 
-        // if (!$this->propagating) {
-        //     Db::upsert('{{%salesforce_assignments}}', [
-        //         'id' => $this->id,
-        //     ], [
-        //         'salesforce_id' => $this->salesforce_id,
-        //         'country' => $this->country,
-        //     ]);
-        // }
+        if (!$this->propagating) {
+            Db::upsert('{{%salesforce_assignments}}', [
+                'id' => $this->id,
+            ], [
+                'salesforce_id' => $this->salesforce_id,
+                'country' => $this->country,
+            ]);
+        }
 
         parent::afterSave($isNew);
     }
