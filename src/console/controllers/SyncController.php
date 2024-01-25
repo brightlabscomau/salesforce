@@ -11,17 +11,48 @@ use craft\helpers\Console;
 use yii\base\Exception as BaseException;
 use yii\console\Exception;
 use yii\console\ExitCode;
+use brightlabs\craftsalesforce\inc\SalesforceQueryBuilder;
 
 class SyncController extends Controller
 {
     public $defaultAction = 'assignments';
+    protected $salesforceApiVersion;
+    protected $salesforceInstanceUrl;
+    protected $salesforceUsername;
+    protected $salesforcePassword;
+    protected $salesforceClientId;
+    protected $bearerToken;
+
+    protected $maxRequestRetries = 10;
+
+    public function beforeAction($action): bool
+    {
+
+        $this->salesforceApiVersion = Salesforce::getInstance()->settings->getSalesforceApiVersion();
+        $this->salesforceInstanceUrl = Salesforce::getInstance()->settings->getSalesforceInstanceUrl();
+        $this->salesforceUsername = Salesforce::getInstance()->settings->getSalesforceUsername();
+        $this->salesforcePassword = Salesforce::getInstance()->settings->getSalesforcePassword();
+        $this->salesforceClientId = Salesforce::getInstance()->settings->getSalesforceClientId();
+        $this->bearerToken = Salesforce::getInstance()->settings->getBearerToken();
+
+        return parent::beforeAction($action);
+    }
 
     /**
      * Sync salesforce data
      */
     public function actionAssignments(): int
     {
-        $response = $this->fetchData();
+
+        $query = new SalesforceQueryBuilder;
+        $query->select([
+            'Id',
+            'Name'
+        ])
+        ->from('Position__c')
+        ->limit(200);
+
+        $response = $this->query($query);
 
         $this->createAssignments($response);
 
@@ -60,25 +91,27 @@ class SyncController extends Controller
         }
     }
 
-    // protected function
+    protected function authorise() {
+        // todo: implement authentication
+        // $this->bearerToken = 'new token';
+    }
 
-    protected function fetchData($query=null) {
-        $bearerToken = Salesforce::getInstance()->settings->getBearerToken();
+    protected function query(SalesforceQueryBuilder $query) {
 
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://australianvolunteers--uatpc2.sandbox.my.salesforce.com/services/data/v60.0/query/?q=SELECT+Id,Name+FROM+Recruitment__c',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'GET',
-        CURLOPT_HTTPHEADER => array(
-            'Authorization: Bearer ' . $bearerToken,
-        ),
+            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/'. $this->salesforceApiVersion .'/query/?q=' . $query->toString(),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Bearer ' . $this->bearerToken,
+            ),
         ));
 
         $response = curl_exec($curl);
@@ -87,23 +120,21 @@ class SyncController extends Controller
 
         $jsonResponse = json_decode($response);
 
-        if ($jsonResponse->totalSize ?? false) {
+
+        try {
+            $jsonResponse->totalSize;
+
             return $jsonResponse;
-        }
 
+        } catch (\Throwable $th) {
+            $error = $jsonResponse[0];
 
-        if (
-            ($jsonResponse[0]->errorCode ?? false) &&
-            $jsonResponse[0]->errorCode == 'INVALID_AUTH_HEADER'
-        ) {
-            $this->stderr("Error: " . $jsonResponse[0]->message . "\n", Console::FG_RED);
-
-            if ($jsonResponse[0]->errorCode == 'INVALID_AUTH_HEADER') {
+            if ($error->errorCode == 'INVALID_AUTH_HEADER') {
+                $this->stderr("Error: " . $jsonResponse[0]->message . "\n", Console::FG_RED);
                 $this->stderr("Hint: Check if you've provided bearer token and it is valid.\n\n", Console::FG_YELLOW);
             }
 
-
-            throw new BaseException($jsonResponse[0]->message);
+            exit;
         }
 
     }
