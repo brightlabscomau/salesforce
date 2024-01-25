@@ -101,10 +101,6 @@ class Salesforce extends Plugin
                             'label' => 'Assignments',
                             'url' => 'salesforce/assignments'
                         ],
-                        'assignmentFields' => [
-                            'label' => 'Assignment Fields',
-                            'url' => 'salesforce/fields'
-                        ],
                         'settings' => [
                             'label' => 'Settings',
                             'url' => 'salesforce/settings'
