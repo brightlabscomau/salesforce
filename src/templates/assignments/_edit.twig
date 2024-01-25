@@ -3,44 +3,29 @@
 
 {% set title = 'View Assignment'|t('salesforce') %}
 
+{% set tabs = {
+  general: {
+    label: 'General'|t('salesforce'),
+    url: '#general',
+  },
+  json: {
+    label: 'JSON'|t('salesforce'),
+    url: '#json'
+  }
+} %}
+
+{% set selectedTab = 'general' %}
+
+
+{% block details %}
+
+{% endblock details %}
+
 {% block content %}
     {{ actionInput('salesforce/assignments/save') }}
     {{ redirectInput('salesforce/assignments') }}
 
-    {{ forms.hidden({
-        name: 'assignmentId',
-        value: assignment.id,
-        required: true,
-        errors: assignment.getErrors('assignmentId'),
-      }) }}
+    {% include "salesforce/assignments/_general-tab" %}
+    {% include "salesforce/assignments/_json-tab" %}
 
-      {{ forms.textField({
-        label: 'Title'|t('salesforce'),
-        instructions: 'The name of the event'|t('salesforce'),
-        id: 'title',
-        name: 'title',
-        value: assignment.title,
-        required: true,
-        errors: assignment.getErrors('title'),
-      }) }}
-
-      {{ forms.textField({
-        label: 'Salesforce Id'|t('salesforce'),
-        instructions: 'The name of the event'|t('salesforce'),
-        id: 'salesforce_id',
-        name: 'salesforce_id',
-        value: assignment.salesforce_id,
-        required: true,
-        errors: assignment.getErrors('salesforce_id'),
-      }) }}
-
-    {{ forms.textField({
-        label: 'Country'|t('salesforce'),
-        instructions: 'The name of the event'|t('salesforce'),
-        id: 'country',
-        name: 'country',
-        value: assignment.country,
-        required: true,
-        errors: assignment.getErrors('country'),
-      }) }}
 {% endblock content %}

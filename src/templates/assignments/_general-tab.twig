@@ -1,0 +1,43 @@
+{% import '_includes/forms.twig' as forms %}
+
+<div id="general">
+    {{ forms.hidden({
+        name: 'assignmentId',
+        value: assignment.id,
+        required: true,
+        errors: assignment.getErrors('assignmentId'),
+      }) }}
+
+      {{ forms.textField({
+        label: 'Title'|t('salesforce'),
+        instructions: 'The name of the event'|t('salesforce'),
+        id: 'title',
+        name: 'title',
+        value: assignment.title,
+        required: true,
+        errors: assignment.getErrors('title'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
+        label: 'Salesforce Id'|t('salesforce'),
+        instructions: 'The name of the event'|t('salesforce'),
+        id: 'salesforceId',
+        name: 'salesforceId',
+        value: assignment.salesforceId,
+        required: true,
+        errors: assignment.getErrors('salesforceId'),
+        readonly: true,
+      }) }}
+
+    {{ forms.textField({
+        label: 'Country'|t('salesforce'),
+        instructions: 'The name of the event'|t('salesforce'),
+        id: 'country',
+        name: 'country',
+        value: assignment.country,
+        required: true,
+        errors: assignment.getErrors('country'),
+        readonly: true,
+      }) }}
+</div>

@@ -51,8 +51,9 @@ class AssignmentsController extends Controller
     {
         $assignmentId = $this->request->getBodyParam('assignmentId');
         $title = $this->request->getBodyParam('title');
+        $salesforceId = $this->request->getBodyParam('salesforceId');
         $country = $this->request->getBodyParam('country');
-        $salesforce_id = $this->request->getBodyParam('salesforce_id');
+        $jsonContent = $this->request->getBodyParam('jsonContent');
         $isFresh = $this->request->getParam('fresh');
 
         if ($assignmentId && !$isFresh) {
@@ -65,8 +66,10 @@ class AssignmentsController extends Controller
         }
 
         $assignment->title = $title;
-        $assignment->salesforce_id = $salesforce_id;
+        $assignment->salesforceId = $salesforceId;
         $assignment->country = $country;
+        $assignment->json = $jsonContent;
+
 
         if (!Salesforce::getInstance()->assignment->saveAssignment($assignment)) {
             if ($this->request->acceptsJson) {

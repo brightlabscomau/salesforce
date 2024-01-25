@@ -10,13 +10,22 @@ use craft\base\Model;
  */
 class Assignment extends Model
 {
+    public $salesforceId = null;
     public $country = null;
-    public $salesforce_id = null;
+    public $jsonContent = null;
 
     protected function defineRules(): array
     {
         return [
-            [['title', 'country', 'salesforce_id'], 'required']
+            [
+                [
+                    'title',
+                    'salesforceId',
+                    'country',
+                    'jsonContent',
+                ],
+                'required'
+            ]
         ];
     }
 }

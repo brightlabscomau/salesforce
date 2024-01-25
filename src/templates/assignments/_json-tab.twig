@@ -1,0 +1,8 @@
+{% import '_includes/forms.twig' as forms %}
+
+<div id="json" class="hidden">
+    {{ forms.textarea({
+        value: assignment.jsonContent,
+        readonly: true,
+    }) }}
+</div>

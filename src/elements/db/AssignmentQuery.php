@@ -11,7 +11,7 @@ use craft\helpers\Db;
  */
 class AssignmentQuery extends ElementQuery
 {
-    public $salesforce_id;
+    public $salesforceId;
     public $country;
 
 
@@ -24,7 +24,7 @@ class AssignmentQuery extends ElementQuery
 
     public function salesforceId($value): self
     {
-        $this->salesforce_id = $value;
+        $this->salesforceId = $value;
 
         return $this;
     }
@@ -35,13 +35,14 @@ class AssignmentQuery extends ElementQuery
         $this->joinElementTable('salesforce_assignments');
 
         $this->query->select([
-            'salesforce_assignments.salesforce_id',
+            'salesforce_assignments.salesforceId',
             'salesforce_assignments.country',
+            'salesforce_assignments.jsonContent',
         ]);
 
         // todo: apply any custom query params
-        if ($this->salesforce_id) {
-            $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.salesforce_id', $this->salesforce_id));
+        if ($this->salesforceId) {
+            $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.salesforceId', $this->salesforceId));
         }
 
         if ($this->country) {

@@ -19,8 +19,9 @@ use craft\helpers\Db;
  */
 class Assignment extends Element
 {
-    public ?string $salesforce_id = null;
+    public ?string $salesforceId = null;
     public ?string $country = null;
+    public ?string $jsonContent = null;
 
     public static function displayName(): string
     {
@@ -138,7 +139,7 @@ class Assignment extends Element
     protected static function defineTableAttributes(): array
     {
         return [
-            'salesforce_id' => ['label' => Craft::t('salesforce', 'Salesforce Id')],
+            'salesforceId' => ['label' => Craft::t('salesforce', 'Salesforce Id')],
             'country' => ['label' => Craft::t('salesforce', 'Country')],
             'slug' => ['label' => Craft::t('app', 'Slug')],
             'uri' => ['label' => Craft::t('app', 'URI')],
@@ -268,16 +269,18 @@ class Assignment extends Element
         Db::upsert('{{%salesforce_assignments}}', [
             'id' => $this->id,
         ], [
-            'salesforce_id' => $this->salesforce_id,
+            'salesforceId' => $this->salesforceId,
             'country' => $this->country,
+            'jsonContent' => $this->jsonContent,
         ]);
 
         if (!$this->propagating) {
             Db::upsert('{{%salesforce_assignments}}', [
                 'id' => $this->id,
             ], [
-                'salesforce_id' => $this->salesforce_id,
+                'salesforceId' => $this->salesforceId,
                 'country' => $this->country,
+                'jsonContent' => $this->jsonContent,
             ]);
         }
 

@@ -34,7 +34,8 @@ class SalesforceQueryBuilder
 
     public function toString(): string
     {
-        $queryString = $this->columns . ' FROM '
+        $queryString = 'SELECT '
+        . $this->columns . ' FROM '
         . $this->table . ' LIMIT '
         . $this->limit;
 

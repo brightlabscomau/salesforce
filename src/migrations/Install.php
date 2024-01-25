@@ -26,8 +26,9 @@ class Install extends Migration
         // Create the Assignments table:
         $this->createTable($this->table, [
             'id' => $this->primaryKey(),
-            'salesforce_id' => $this->char(100)->notNull(),
+            'salesforceId' => $this->char(100)->notNull(),
             'country' => $this->char(100)->notNull(),
+            'jsonContent' => $this->longText()->notNull(),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),
             'uid' => $this->uid(),

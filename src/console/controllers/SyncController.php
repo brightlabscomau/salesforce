@@ -50,7 +50,7 @@ class SyncController extends Controller
             'Name'
         ])
         ->from('Position__c')
-        ->limit(200);
+        ->limit(1);
 
         $response = $this->query($query);
 
@@ -70,7 +70,7 @@ class SyncController extends Controller
             $id = (new Query())
             ->select(['id'])
             ->from(['salesforce_assignments'])
-            ->where(['salesforce_id' => $record->Id])
+            ->where(['salesforceId' => $record->Id])
             ->scalar();
 
             if (!empty($id)) {
@@ -80,12 +80,13 @@ class SyncController extends Controller
             }
 
             $assignment->title = $record->Name;
-            $assignment->salesforce_id = (string) $record->Id;
+            $assignment->salesforceId = (string) $record->Id;
             $assignment->country = (string) 'Australia';
+            $assignment->jsonContent = json_encode($record);
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
 
-            if ($index > 4) {
+            if ($index > 2) {
                 break;
             }
         }
@@ -119,7 +120,6 @@ class SyncController extends Controller
         curl_close($curl);
 
         $jsonResponse = json_decode($response);
-
 
         try {
             $jsonResponse->totalSize;
