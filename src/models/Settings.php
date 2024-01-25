@@ -21,12 +21,12 @@ class Settings extends Model
 
     public function getSalesforceApiVersion(): ?string
     {
-        return $this->salesforceApiVersion;
+        return App::parseEnv($this->salesforceApiVersion);
     }
 
     public function getSalesforceInstanceUrl(): ?string
     {
-        return $this->salesforceInstanceUrl;
+        return App::parseEnv($this->salesforceInstanceUrl);
     }
 
     public function getSalesforceUsername(): ?string
