@@ -28,11 +28,21 @@ class SettingsController extends Controller
 
         $settings = Salesforce::getInstance()->settings;
 
+        $settings->salesforceApiVersion = $this->request->getBodyParam('salesforceApiVersion');
+        $settings->salesforceInstanceUrl = $this->request->getBodyParam('salesforceInstanceUrl');
+        $settings->salesforceUsername = $this->request->getBodyParam('salesforceUsername');
+        $settings->salesforcePassword = $this->request->getBodyParam('salesforcePassword');
+        $settings->salesforceClientId = $this->request->getBodyParam('salesforceClientId');
         $settings->bearerToken = $this->request->getBodyParam('bearerToken');
 
         $path = "plugins.salesforce.settings";
 
         Craft::$app->getProjectConfig()->set($path, [
+            'salesforceApiVersion' => $settings->salesforceApiVersion,
+            'salesforceInstanceUrl' => $settings->salesforceInstanceUrl,
+            'salesforceUsername' => $settings->salesforceUsername,
+            'salesforcePassword' => $settings->salesforcePassword,
+            'salesforceClientId' => $settings->salesforceClientId,
             'bearerToken' => $settings->bearerToken
         ]);
 
