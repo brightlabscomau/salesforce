@@ -61,6 +61,7 @@ class AssignmentsController extends Controller
         $positionSummary = $this->request->getBodyParam('positionSummary');
         $sector = $this->request->getBodyParam('sector');
         $country = $this->request->getBodyParam('country');
+        $publish = $this->request->getBodyParam('publish');
         $jsonContent = $this->request->getBodyParam('jsonContent');
 
         $isFresh = $this->request->getParam('fresh');
@@ -85,8 +86,8 @@ class AssignmentsController extends Controller
         $assignment->positionSummary = $positionSummary;
         $assignment->sector = $sector;
         $assignment->country = $country;
+        $assignment->publish = $publish;
         $assignment->json = $jsonContent;
-
 
         if (!Salesforce::getInstance()->assignment->saveAssignment($assignment)) {
             if ($this->request->acceptsJson) {

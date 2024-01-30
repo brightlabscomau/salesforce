@@ -31,6 +31,7 @@ class Assignment extends Element
     public ?string $positionSummary = null;
     public ?string $sector = null;
     public ?string $country = null;
+    public ?string $publish = null;
     public ?string $jsonContent = null;
 
     public static function displayName(): string
@@ -299,6 +300,7 @@ class Assignment extends Element
             'positionSummary' => $this->positionSummary,
             'sector' => $this->sector,
             'country' => $this->country,
+            'publish' => $this->publish,
             'jsonContent' => $this->jsonContent,
         ]);
 
@@ -316,6 +318,7 @@ class Assignment extends Element
                 'positionSummary' => $this->positionSummary,
                 'sector' => $this->sector,
                 'country' => $this->country,
+                'publish' => $this->publish,
                 'jsonContent' => $this->jsonContent,
             ]);
         }

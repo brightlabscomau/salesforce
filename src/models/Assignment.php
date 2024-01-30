@@ -19,6 +19,7 @@ class Assignment extends Model
     public $positionSummary = null;
     public $sector = null;
     public $country = null;
+    public $publish = null;
     public $jsonContent = null;
 
     protected function defineRules(): array
@@ -37,6 +38,7 @@ class Assignment extends Model
                     'positionSummary',
                     'sector',
                     'country',
+                    'publish',
                     'jsonContent',
                 ],
                 'required'

@@ -7,7 +7,8 @@ class SalesforceQueryBuilder
     protected $columns='';
     protected $table='';
     protected $where=[];
-    protected $limit='';
+    protected $limit=null;
+    protected $textQuery=null;
 
     public function select($columns=[]): SalesforceQueryBuilder
     {
@@ -19,6 +20,11 @@ class SalesforceQueryBuilder
     {
         $this->table = $table;
         return $this;
+    }
+
+    public function getTable(): ?string
+    {
+        return $this->table;
     }
 
     public function where($column='', $comparator='', $value): SalesforceQueryBuilder
@@ -33,20 +39,43 @@ class SalesforceQueryBuilder
         return $this;
     }
 
+    protected function limitToString(): ?string
+    {
+        if (empty($this->limit)) {
+            return '';
+        }
+
+        return "LIMIT {$this->limit}";
+    }
+
+    public function getLimit(): ?string
+    {
+        return $this->limit;
+    }
+
+    public function setTextQuery($query): SalesforceQueryBuilder
+    {
+        $this->textQuery = $query;
+        return $this;
+    }
+
+    public function isTextQuery(): bool
+    {
+        return !empty($this->textQuery);
+    }
+
     public function toString(): string
     {
+        if(!empty($this->textQuery)) {
+            return $this->textQuery;
+        }
+
         $queryString = 'SELECT '
         . $this->columns . ' FROM '
         . $this->table . ' '
         . implode('AND', $this->where)
-        . ' LIMIT '
-        . $this->limit;
+        . $this->limitToString();
 
-        return str_replace(' ','+', $queryString);
-    }
-
-    public function getTable(): ?string
-    {
-        return $this->table;
+        return trim(str_replace(' ','+', $queryString), '+');
     }
 }

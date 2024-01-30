@@ -6,10 +6,7 @@ use brightlabs\craftsalesforce\elements\Assignment;
 use brightlabs\craftsalesforce\Salesforce;
 use craft\console\Controller;
 use craft\db\Query;
-use craft\db\Table;
 use craft\helpers\Console;
-use yii\base\Exception as BaseException;
-use yii\console\Exception;
 use yii\console\ExitCode;
 use brightlabs\craftsalesforce\inc\SalesforceQueryBuilder;
 
@@ -24,10 +21,15 @@ class SyncController extends Controller
 
     protected $json = [];
 
+    /** Paginate through records */
     protected $maxRequestRetries = 10;
+    protected $nextRecordsQuery = '';
+    protected $done = true;
 
     /** Log */
     protected $totalRequests = 0;
+    protected $totalRecords = 0;
+    protected $processedRecords = 0;
 
     public function beforeAction($action): bool
     {
@@ -68,37 +70,56 @@ class SyncController extends Controller
         ));
 
         $response = curl_exec($curl);
+        $jsonResponse = json_decode($response);
 
         curl_close($curl);
 
-        return json_decode($response)->access_token ?? '';
+        $displayToken = substr($jsonResponse->access_token, 0, 7);
+        $this->stdout("Retrieved access token: {$displayToken}... \n", Console::FG_BLUE);
+
+        return $jsonResponse->access_token ?? '';
     }
 
     /**
      * Sync salesforce data
      */
-    public function actionAssignments(): int
+    public function actionAssignments($nextQuery=null): int
     {
-        $query = new SalesforceQueryBuilder;
-        $query->select([
-            'Id',
-            'Name',
-            'Hybrid_Volunteering_Nature__c',
-            'Workplace__c',
-            'Duration__c',
-            'Start_Date__c',
-            'Position_Description_URL__c',
-            'Application_Close_Date__c',
-            'Position_Summary__c',
-            'Sector__c',
-            'Country__r.Name',
-        ])
-        ->from('Position__c')
-        ->limit(2);
+        if (empty($nextQuery)) {
+            $query = new SalesforceQueryBuilder;
+            $query->select([
+                'Id',
+                'Name',
+                'Hybrid_Volunteering_Nature__c',
+                'Workplace__c',
+                'Duration__c',
+                'Start_Date__c',
+                'Position_Description_URL__c',
+                'Application_Close_Date__c',
+                'Position_Summary__c',
+                'Sector__c',
+                'Country__r.Name',
+            ])
+            ->from('Position__c')
+            ->limit(1000);
 
-        $response = $this->query($query);
+            $response = $this->query($query);
+        } else {
+            $this->stdout("Recursion query: {$this->nextRecordsQuery} \n", Console::FG_BLUE);
+
+            $this->getSalesforceToken();
+
+            $query = new SalesforceQueryBuilder;
+            $query->setTextQuery($this->nextRecordsQuery);
+            $response = $this->query($query);
+        }
 
         $this->createAssignments($response);
+
+        /** Recursion :) */
+        if (!$this->done) {
+            $this->actionAssignments($this->nextRecordsQuery);
+        }
 
         $this->stdout("Total requests: {$this->totalRequests} \n", Console::FG_GREEN);
 
@@ -137,21 +158,61 @@ class SyncController extends Controller
             $assignment->positionSummary = (string) $record->Position_Summary__c;
             $assignment->sector = (string) $record->Sector__c;
             $assignment->country = (string) $record->Country__r?->Name ?? '';
+            $assignment->publish = (string) $this->getPublishStatus($assignment);
 
             // Json data dump
+            $this->json['Position__c'] = $record;
             $assignment->jsonContent = json_encode($this->json);
+            $this->processedRecords++;
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
+            $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_GREEN);
 
         }
+
+
+    }
+
+    protected function getPublishStatus(Assignment $assignment): ?string
+    {
+        $query = new SalesforceQueryBuilder();
+        $query->select([
+            'Id',
+            'Name',
+            'Publish__c',
+            'Position__r.Id'
+        ])
+        ->from('Recruitment__c')
+        ->where('Position__r.Id', '=', $assignment->salesforceId)
+        ->limit(1);
+
+        $response = $this->query($query);
+
+        return $response->records[0]->Publish__c ?? '';
+    }
+
+    protected function getNextRecordQuery($nextRecordsUrl=null): ?string
+    {
+        if (empty($nextRecordsUrl)) {
+            $this->done = true;
+            return $this->nextRecordsQuery;
+        }
+
+        $reversedQuery = strrev($nextRecordsUrl);
+        $query = explode('/', $reversedQuery)[0];
+
+        return strrev($query);
     }
 
     protected function query(SalesforceQueryBuilder $query) {
 
         $curl = curl_init();
 
+        $appendQParameter = $query->isTextQuery()? '' : '?q=';
+        $textQuery = $appendQParameter . $query->toString();
+
         curl_setopt_array($curl, array(
-            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/'. $this->salesforceApiVersion .'/query/?q=' . $query->toString(),
+            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/'. $this->salesforceApiVersion .'/query/' . $textQuery,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -171,24 +232,40 @@ class SyncController extends Controller
         curl_close($curl);
 
         $jsonResponse = json_decode($response);
-        $this->json[$query->getTable()] = $jsonResponse;
+
+        /** Only log if we are retrieving one record */
+        if ($query->getLimit() <= 1) {
+            $this->json[$query->getTable()] = $jsonResponse;
+        }
 
         try {
             $jsonResponse->totalSize;
 
+            /** Next query should be done on Position__c */
+            if ($query->getTable() == 'Position__c') {
+                $this->nextRecordsQuery = $this->getNextRecordQuery($jsonResponse->nextRecordsUrl);
+                $this->done = $jsonResponse->done;
+                $this->totalRecords = $jsonResponse->totalSize;
+            }
+
             return $jsonResponse;
 
         } catch (\Throwable $th) {
+
             $error = $jsonResponse[0] ?? (object)['errorCode' => 'MISSING_CREDENTIALS'];
 
             if ($error->errorCode == 'INVALID_AUTH_HEADER') {
                 $this->stderr("Error: " . $jsonResponse[0]->message . "\n", Console::FG_RED);
+                return;
             }
 
             if ($error->errorCode == 'MISSING_CREDENTIALS') {
                 $this->stderr("Error: Configure Salesforce plugin.\n", Console::FG_RED);
+                return;
             }
 
+            dd($jsonResponse);
+            $this->stderr("Error: {$th}", Console::FG_RED);
             exit;
         }
 

@@ -119,4 +119,14 @@
         errors: assignment.getErrors('country'),
         readonly: true,
       }) }}
+
+      {{ forms.textField({
+        label: 'Publish'|t('salesforce'),
+        id: 'publish',
+        name: 'publish',
+        value: assignment.publish,
+        required: true,
+        errors: assignment.getErrors('publish'),
+        readonly: true,
+      }) }}
 </div>

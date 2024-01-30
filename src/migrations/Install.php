@@ -36,6 +36,7 @@ class Install extends Migration
             'positionSummary' => $this->longText()->null(),
             'sector' => $this->char('255')->null(),
             'country' => $this->char(100)->null(),
+            'publish' => $this->char(100)->null(),
             'jsonContent' => $this->longText()->notNull(),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),
