@@ -5,6 +5,7 @@ namespace brightlabs\craftsalesforce\elements;
 use Craft;
 use brightlabs\craftsalesforce\elements\conditions\AssignmentCondition;
 use brightlabs\craftsalesforce\elements\db\AssignmentQuery;
+use brightlabs\craftsalesforce\Salesforce;
 use craft\base\Element;
 use craft\elements\User;
 use craft\elements\conditions\ElementConditionInterface;
@@ -19,7 +20,16 @@ use craft\helpers\Db;
  */
 class Assignment extends Element
 {
+    public string $handle = 'assignment';
     public ?string $salesforceId = null;
+    public ?string $hybridVolunteeringNature = null;
+    public ?string $workplace = null;
+    public ?string $duration = null;
+    public ?string $startDate = null;
+    public ?string $positionDescriptionUrl = null;
+    public ?string $applicationCloseDate = null;
+    public ?string $positionSummary = null;
+    public ?string $sector = null;
     public ?string $country = null;
     public ?string $jsonContent = null;
 
@@ -172,7 +182,7 @@ class Assignment extends Element
     public function getUriFormat(): ?string
     {
         // If assignments should have URLs, define their URI format here
-        return null;
+        return "assignments/{$this->slug}";
     }
 
     protected function previewTargets(): array
@@ -196,7 +206,7 @@ class Assignment extends Element
         return [
             'templates/render',
             [
-                'template' => 'site/template/path',
+                'template' => 'assignments/_assignment',
                 'variables' => ['assignment' => $this],
             ]
         ];
@@ -240,7 +250,7 @@ class Assignment extends Element
 
     public function canCreateDrafts(User $user): bool
     {
-        return true;
+        return false;
     }
 
     protected function cpEditUrl(): ?string
@@ -264,12 +274,30 @@ class Assignment extends Element
         ]);
     }
 
+    protected static function defineSearchableAttributes(): array
+    {
+        return [
+            'title',
+            'country',
+            'hybridVolunteeringNature',
+        ];
+    }
+
+
     public function afterSave(bool $isNew): void
     {
         Db::upsert('{{%salesforce_assignments}}', [
             'id' => $this->id,
         ], [
             'salesforceId' => $this->salesforceId,
+            'hybridVolunteeringNature' => $this->hybridVolunteeringNature,
+            'workplace' => $this->workplace,
+            'duration' => $this->duration,
+            'startDate' => $this->startDate,
+            'positionDescriptionUrl' => $this->positionDescriptionUrl,
+            'applicationCloseDate' => $this->applicationCloseDate,
+            'positionSummary' => $this->positionSummary,
+            'sector' => $this->sector,
             'country' => $this->country,
             'jsonContent' => $this->jsonContent,
         ]);
@@ -279,6 +307,14 @@ class Assignment extends Element
                 'id' => $this->id,
             ], [
                 'salesforceId' => $this->salesforceId,
+                'hybridVolunteeringNature' => $this->hybridVolunteeringNature,
+                'workplace' => $this->workplace,
+                'duration' => $this->duration,
+                'startDate' => $this->startDate,
+                'positionDescriptionUrl' => $this->positionDescriptionUrl,
+                'applicationCloseDate' => $this->applicationCloseDate,
+                'positionSummary' => $this->positionSummary,
+                'sector' => $this->sector,
                 'country' => $this->country,
                 'jsonContent' => $this->jsonContent,
             ]);

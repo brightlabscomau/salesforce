@@ -14,10 +14,8 @@ class Settings extends Model
 {
     public $salesforceApiVersion;
     public $salesforceInstanceUrl;
-    public $salesforceUsername;
-    public $salesforcePassword;
     public $salesforceClientId;
-    public $bearerToken;
+    public $salesforceClientSecret;
 
     public function getSalesforceApiVersion(): ?string
     {
@@ -29,24 +27,14 @@ class Settings extends Model
         return App::parseEnv($this->salesforceInstanceUrl);
     }
 
-    public function getSalesforceUsername(): ?string
-    {
-        return App::parseEnv($this->salesforceUsername);
-    }
-
-    public function getSalesforcePassword(): ?string
-    {
-        return App::parseEnv($this->salesforcePassword);
-    }
-
     public function getSalesforceClientId(): ?string
     {
         return App::parseEnv($this->salesforceClientId);
     }
 
-    public function getBearerToken(): ?string
+    public function getSalesforceClientSecret(): ?string
     {
-        return App::parseEnv($this->bearerToken);
+        return App::parseEnv($this->salesforceClientSecret);
     }
 
     public function behaviors(): array
@@ -56,10 +44,8 @@ class Settings extends Model
                 'class' => EnvAttributeParserBehavior::class,
                 'attributes' => [
                     'salesforceInstanceUrl',
-                    'salesforceUsername',
-                    'salesforcePassword',
                     'salesforceClientId',
-                    'bearerToken',
+                    'salesforceClientSecret',
                 ],
             ],
         ];
@@ -71,10 +57,8 @@ class Settings extends Model
             [
                 [
                     'salesforceInstanceUrl',
-                    'salesforceUsername',
-                    'salesforcePassword',
                     'salesforceClientId',
-                    'bearerToken'
+                    'salesforceClientSecret',
                 ],
                 'required'
             ]

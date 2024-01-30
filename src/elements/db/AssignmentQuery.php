@@ -36,6 +36,14 @@ class AssignmentQuery extends ElementQuery
 
         $this->query->select([
             'salesforce_assignments.salesforceId',
+            'salesforce_assignments.hybridVolunteeringNature',
+            'salesforce_assignments.workplace',
+            'salesforce_assignments.duration',
+            'salesforce_assignments.startDate',
+            'salesforce_assignments.positionDescriptionUrl',
+            'salesforce_assignments.applicationCloseDate',
+            'salesforce_assignments.positionSummary',
+            'salesforce_assignments.sector',
             'salesforce_assignments.country',
             'salesforce_assignments.jsonContent',
         ]);

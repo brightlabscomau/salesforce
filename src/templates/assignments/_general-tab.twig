@@ -9,8 +9,17 @@
       }) }}
 
       {{ forms.textField({
+        label: 'Salesforce Id'|t('salesforce'),
+        id: 'salesforceId',
+        name: 'salesforceId',
+        value: assignment.salesforceId,
+        required: true,
+        errors: assignment.getErrors('salesforceId'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
         label: 'Title'|t('salesforce'),
-        instructions: 'The name of the event'|t('salesforce'),
         id: 'title',
         name: 'title',
         value: assignment.title,
@@ -20,19 +29,89 @@
       }) }}
 
       {{ forms.textField({
-        label: 'Salesforce Id'|t('salesforce'),
-        instructions: 'The name of the event'|t('salesforce'),
-        id: 'salesforceId',
-        name: 'salesforceId',
-        value: assignment.salesforceId,
+        label: 'Hybrid Volunteering Nature'|t('salesforce'),
+        id: 'hybridVolunteeringNature',
+        name: 'hybridVolunteeringNature',
+        value: assignment.hybridVolunteeringNature,
         required: true,
-        errors: assignment.getErrors('salesforceId'),
+        errors: assignment.getErrors('hybridVolunteeringNature'),
         readonly: true,
       }) }}
 
-    {{ forms.textField({
+      {{ forms.textField({
+        label: 'Workplace'|t('salesforce'),
+        id: 'workplace',
+        name: 'workplace',
+        value: assignment.workplace,
+        required: true,
+        errors: assignment.getErrors('workplace'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
+        label: 'Duration'|t('salesforce'),
+        instructions: 'This value is in months.'|t('salesforce'),
+        id: 'duration',
+        name: 'duration',
+        value: assignment.duration,
+        required: true,
+        errors: assignment.getErrors('duration'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
+        label: 'Start Date'|t('salesforce'),
+        id: 'startDate',
+        name: 'startDate',
+        value: assignment.startDate,
+        required: true,
+        errors: assignment.getErrors('startDate'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textareaField({
+        label: 'Position Description Url'|t('salesforce'),
+        id: 'positionDescriptionUrl',
+        name: 'positionDescriptionUrl',
+        value: assignment.positionDescriptionUrl,
+        required: true,
+        errors: assignment.getErrors('positionDescriptionUrl'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
+        label: 'Application Close Date'|t('salesforce'),
+        id: 'applicationCloseDate',
+        name: 'applicationCloseDate',
+        value: assignment.applicationCloseDate,
+        required: true,
+        errors: assignment.getErrors('applicationCloseDate'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textareaField({
+        label: 'Position Summary'|t('salesforce'),
+        id: 'positionSummary',
+        name: 'positionSummary',
+        value: assignment.positionSummary,
+        required: true,
+        errors: assignment.getErrors('positionSummary'),
+        readonly: true,
+        rows: 20,
+      }) }}
+
+      {{ forms.textField({
+        label: 'Sector'|t('salesforce'),
+        id: 'sector',
+        name: 'sector',
+        value: assignment.sector,
+        required: true,
+        errors: assignment.getErrors('sector'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
         label: 'Country'|t('salesforce'),
-        instructions: 'The name of the event'|t('salesforce'),
         id: 'country',
         name: 'country',
         value: assignment.country,

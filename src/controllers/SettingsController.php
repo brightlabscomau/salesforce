@@ -14,8 +14,6 @@ class SettingsController extends Controller
 
     public function actionIndex(): Response
     {
-        $bearerToken = Salesforce::getInstance()->settings->bearerToken;
-
         return $this->renderTemplate(
             'salesforce/_settings',
             ['settings' => Salesforce::getInstance()->settings],
@@ -30,20 +28,16 @@ class SettingsController extends Controller
 
         $settings->salesforceApiVersion = $this->request->getBodyParam('salesforceApiVersion');
         $settings->salesforceInstanceUrl = $this->request->getBodyParam('salesforceInstanceUrl');
-        $settings->salesforceUsername = $this->request->getBodyParam('salesforceUsername');
-        $settings->salesforcePassword = $this->request->getBodyParam('salesforcePassword');
         $settings->salesforceClientId = $this->request->getBodyParam('salesforceClientId');
-        $settings->bearerToken = $this->request->getBodyParam('bearerToken');
+        $settings->salesforceClientSecret = $this->request->getBodyParam('salesforceClientSecret');
 
         $path = "plugins.salesforce.settings";
 
         Craft::$app->getProjectConfig()->set($path, [
             'salesforceApiVersion' => $settings->salesforceApiVersion,
             'salesforceInstanceUrl' => $settings->salesforceInstanceUrl,
-            'salesforceUsername' => $settings->salesforceUsername,
-            'salesforcePassword' => $settings->salesforcePassword,
             'salesforceClientId' => $settings->salesforceClientId,
-            'bearerToken' => $settings->bearerToken
+            'salesforceClientSecret' => $settings->salesforceClientSecret,
         ]);
 
         return $this->redirectToPostedUrl();

@@ -6,6 +6,7 @@ class SalesforceQueryBuilder
 {
     protected $columns='';
     protected $table='';
+    protected $where=[];
     protected $limit='';
 
     public function select($columns=[]): SalesforceQueryBuilder
@@ -20,9 +21,9 @@ class SalesforceQueryBuilder
         return $this;
     }
 
-    public function where(): SalesforceQueryBuilder
+    public function where($column='', $comparator='', $value): SalesforceQueryBuilder
     {
-        // todo: implement where
+        $this->where[] = "WHERE {$column} {$comparator} '{$value}'";
         return $this;
     }
 
@@ -36,9 +37,16 @@ class SalesforceQueryBuilder
     {
         $queryString = 'SELECT '
         . $this->columns . ' FROM '
-        . $this->table . ' LIMIT '
+        . $this->table . ' '
+        . implode('AND', $this->where)
+        . ' LIMIT '
         . $this->limit;
 
         return str_replace(' ','+', $queryString);
+    }
+
+    public function getTable(): ?string
+    {
+        return $this->table;
     }
 }

@@ -33,24 +33,6 @@
 
 {{ forms.autosuggestField({
   first: true,
-  label: 'Username',
-  name: 'salesforceUsername',
-  value: settings.salesforceUsername,
-  required: true,
-  suggestEnvVars: true
-}) }}
-
-{{ forms.autosuggestField({
-  first: true,
-  label: 'Password',
-  name: 'salesforcePassword',
-  value: settings.salesforcePassword,
-  required: true,
-  suggestEnvVars: true
-}) }}
-
-{{ forms.autosuggestField({
-  first: true,
   label: 'Client Id',
   name: 'salesforceClientId',
   value: settings.salesforceClientId,
@@ -60,9 +42,9 @@
 
 {{ forms.autosuggestField({
   first: true,
-  label: 'Bearer token',
-  name: 'bearerToken',
-  value: settings.bearerToken,
+  label: 'Client Secret',
+  name: 'salesforceClientSecret',
+  value: settings.salesforceClientSecret,
   required: true,
   suggestEnvVars: true
 }) }}

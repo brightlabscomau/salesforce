@@ -2,7 +2,6 @@
 
 namespace brightlabs\craftsalesforce\models;
 
-use Craft;
 use craft\base\Model;
 
 /**
@@ -11,6 +10,14 @@ use craft\base\Model;
 class Assignment extends Model
 {
     public $salesforceId = null;
+    public $hybridVolunteeringNature = null;
+    public $workplace = null;
+    public $duration = null;
+    public $startDate = null;
+    public $positionDescriptionUrl = null;
+    public $applicationCloseDate = null;
+    public $positionSummary = null;
+    public $sector = null;
     public $country = null;
     public $jsonContent = null;
 
@@ -21,6 +28,14 @@ class Assignment extends Model
                 [
                     'title',
                     'salesforceId',
+                    'hybridVolunteeringNature',
+                    'workplace',
+                    'duration',
+                    'startDate',
+                    'positionDescriptionUrl',
+                    'applicationCloseDate',
+                    'positionSummary',
+                    'sector',
                     'country',
                     'jsonContent',
                 ],

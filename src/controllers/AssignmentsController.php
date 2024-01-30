@@ -52,8 +52,17 @@ class AssignmentsController extends Controller
         $assignmentId = $this->request->getBodyParam('assignmentId');
         $title = $this->request->getBodyParam('title');
         $salesforceId = $this->request->getBodyParam('salesforceId');
+        $hybridVolunteeringNature = $this->request->getBodyParam('hybridVolunteeringNature');
+        $workplace = $this->request->getBodyParam('workplace');
+        $duration = $this->request->getBodyParam('duration');
+        $startDate = $this->request->getBodyParam('startDate');
+        $positionDescriptionUrl = $this->request->getBodyParam('positionDescriptionUrl');
+        $applicationCloseDate = $this->request->getBodyParam('applicationCloseDate');
+        $positionSummary = $this->request->getBodyParam('positionSummary');
+        $sector = $this->request->getBodyParam('sector');
         $country = $this->request->getBodyParam('country');
         $jsonContent = $this->request->getBodyParam('jsonContent');
+
         $isFresh = $this->request->getParam('fresh');
 
         if ($assignmentId && !$isFresh) {
@@ -67,6 +76,14 @@ class AssignmentsController extends Controller
 
         $assignment->title = $title;
         $assignment->salesforceId = $salesforceId;
+        $assignment->hybridVolunteeringNature = $hybridVolunteeringNature;
+        $assignment->workplace = $workplace;
+        $assignment->duration = $duration;
+        $assignment->startDate = $startDate;
+        $assignment->positionDescriptionUrl = $positionDescriptionUrl;
+        $assignment->applicationCloseDate = $applicationCloseDate;
+        $assignment->positionSummary = $positionSummary;
+        $assignment->sector = $sector;
         $assignment->country = $country;
         $assignment->json = $jsonContent;
 
