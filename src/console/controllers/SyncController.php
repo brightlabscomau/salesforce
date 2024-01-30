@@ -101,10 +101,13 @@ class SyncController extends Controller
                 'Country__r.Name',
             ])
             ->from('Position__c')
-            ->limit(1000);
+            ->limit(505);
 
             $response = $this->query($query);
-        } else {
+        }
+
+        if (!empty($nextQuery) && !$this->done)
+        {
             $this->stdout("Recursion query: {$this->nextRecordsQuery} \n", Console::FG_BLUE);
 
             $this->getSalesforceToken();
@@ -241,11 +244,12 @@ class SyncController extends Controller
         try {
             $jsonResponse->totalSize;
 
-            /** Next query should be done on Position__c */
-            if ($query->getTable() == 'Position__c') {
-                $this->nextRecordsQuery = $this->getNextRecordQuery($jsonResponse->nextRecordsUrl);
-                $this->done = $jsonResponse->done;
+            /** Set total records using Position__c */
+            if ($query->getTable() == 'Position__c' || $query->isTextQuery()) {
+
                 $this->totalRecords = $jsonResponse->totalSize;
+                $this->done = $jsonResponse->done;
+                $this->nextRecordsQuery = $this->getNextRecordQuery($jsonResponse->nextRecordsUrl ?? null);
             }
 
             return $jsonResponse;
@@ -264,7 +268,6 @@ class SyncController extends Controller
                 return;
             }
 
-            dd($jsonResponse);
             $this->stderr("Error: {$th}", Console::FG_RED);
             exit;
         }
