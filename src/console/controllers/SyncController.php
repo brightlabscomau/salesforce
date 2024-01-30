@@ -100,8 +100,7 @@ class SyncController extends Controller
                 'Sector__c',
                 'Country__r.Name',
             ])
-            ->from('Position__c')
-            ->limit(505);
+            ->from('Position__c');
 
             $response = $this->query($query);
         }
