@@ -32,6 +32,8 @@ class Assignment extends Element
     public ?string $sector = null;
     public ?string $country = null;
     public ?string $publish = null;
+    public ?string $recruitmentStartDate = null;
+    public ?string $recruitmentEndDate = null;
     public ?string $jsonContent = null;
 
     public static function displayName(): string
@@ -301,6 +303,8 @@ class Assignment extends Element
             'sector' => $this->sector,
             'country' => $this->country,
             'publish' => $this->publish,
+            'recruitmentStartDate' => $this->recruitmentStartDate,
+            'recruitmentEndDate' => $this->recruitmentEndDate,
             'jsonContent' => $this->jsonContent,
         ]);
 
@@ -319,6 +323,8 @@ class Assignment extends Element
                 'sector' => $this->sector,
                 'country' => $this->country,
                 'publish' => $this->publish,
+                'recruitmentStartDate' => $this->recruitmentStartDate,
+                'recruitmentEndDate' => $this->recruitmentEndDate,
                 'jsonContent' => $this->jsonContent,
             ]);
         }

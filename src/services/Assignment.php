@@ -23,4 +23,9 @@ class Assignment extends Component
     {
         return Craft::$app->elements->saveElement($assignment, true);
     }
+
+    public function deleteAssignment(ElementsAssignment $assignment)
+    {
+        return Craft::$app->elements->deleteElement($assignment, true);
+    }
 }

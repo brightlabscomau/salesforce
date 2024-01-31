@@ -46,6 +46,8 @@ class AssignmentQuery extends ElementQuery
             'salesforce_assignments.sector',
             'salesforce_assignments.country',
             'salesforce_assignments.publish',
+            'salesforce_assignments.recruitmentStartDate',
+            'salesforce_assignments.recruitmentEndDate',
             'salesforce_assignments.jsonContent',
         ]);
 

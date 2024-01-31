@@ -33,6 +33,12 @@ class SalesforceQueryBuilder
         return $this;
     }
 
+    public function whereDate($column='', $comparator='', $value): SalesforceQueryBuilder
+    {
+        $this->where[] = "WHERE {$column} {$comparator} {$value}";
+        return $this;
+    }
+
     public function limit($limit=1): SalesforceQueryBuilder
     {
         $this->limit = $limit;
@@ -73,9 +79,13 @@ class SalesforceQueryBuilder
         $queryString = 'SELECT '
         . $this->columns . ' FROM '
         . $this->table . ' '
-        . implode('AND', $this->where)
+        . implode(' AND ', $this->where) . ' '
         . $this->limitToString();
 
-        return trim(str_replace(' ','+', $queryString), '+');
+        return str_replace(
+            ['\n'],
+            '',
+            trim(str_replace(' ','+', $queryString), '+')
+        );
     }
 }

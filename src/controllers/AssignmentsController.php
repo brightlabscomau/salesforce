@@ -62,6 +62,8 @@ class AssignmentsController extends Controller
         $sector = $this->request->getBodyParam('sector');
         $country = $this->request->getBodyParam('country');
         $publish = $this->request->getBodyParam('publish');
+        $recruitmentStartDate = $this->request->getBodyParam('recruitmentStartDate');
+        $recruitmentEndDate = $this->request->getBodyParam('recruitmentEndDate');
         $jsonContent = $this->request->getBodyParam('jsonContent');
 
         $isFresh = $this->request->getParam('fresh');
@@ -87,6 +89,8 @@ class AssignmentsController extends Controller
         $assignment->sector = $sector;
         $assignment->country = $country;
         $assignment->publish = $publish;
+        $assignment->recruitmentStartDate = $recruitmentStartDate;
+        $assignment->recruitmentEndDate = $recruitmentEndDate;
         $assignment->json = $jsonContent;
 
         if (!Salesforce::getInstance()->assignment->saveAssignment($assignment)) {

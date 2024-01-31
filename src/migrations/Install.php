@@ -38,6 +38,8 @@ class Install extends Migration
             'country' => $this->char(100)->null(),
             'publish' => $this->char(100)->null(),
             'jsonContent' => $this->longText()->notNull(),
+            'recruitmentStartDate' => $this->dateTime()->null(),
+            'recruitmentEndDate' => $this->dateTime()->null(),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),
             'uid' => $this->uid(),

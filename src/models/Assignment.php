@@ -20,6 +20,8 @@ class Assignment extends Model
     public $sector = null;
     public $country = null;
     public $publish = null;
+    public $recruitmentStartDate = null;
+    public $recruitmentEndDate = null;
     public $jsonContent = null;
 
     protected function defineRules(): array
@@ -39,6 +41,8 @@ class Assignment extends Model
                     'sector',
                     'country',
                     'publish',
+                    'recruitmentStartDate',
+                    'recruitmentEndDate',
                     'jsonContent',
                 ],
                 'required'

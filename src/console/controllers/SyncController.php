@@ -2,12 +2,12 @@
 
 namespace brightlabs\craftsalesforce\console\controllers;
 
-use brightlabs\craftsalesforce\elements\Assignment;
-use brightlabs\craftsalesforce\Salesforce;
-use craft\console\Controller;
 use craft\db\Query;
-use craft\helpers\Console;
 use yii\console\ExitCode;
+use craft\helpers\Console;
+use craft\console\Controller;
+use brightlabs\craftsalesforce\Salesforce;
+use brightlabs\craftsalesforce\elements\Assignment;
 use brightlabs\craftsalesforce\inc\SalesforceQueryBuilder;
 
 class SyncController extends Controller
@@ -30,6 +30,7 @@ class SyncController extends Controller
     protected $totalRequests = 0;
     protected $totalRecords = 0;
     protected $processedRecords = 0;
+    protected $skippedRecords = [];
 
     public function beforeAction($action): bool
     {
@@ -99,8 +100,13 @@ class SyncController extends Controller
                 'Position_Summary__c',
                 'Sector__c',
                 'Country__r.Name',
+                'LastModifiedDate',
+                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r)'
             ])
-            ->from('Position__c');
+            ->from('Position__c')
+            // ->whereDate('Publish__c', 'IN', "('AVP Portal (Public)')");
+            ->whereDate('LastModifiedDate', '>=', 'LAST_N_DAYS:14');
+
 
             $response = $this->query($query);
         }
@@ -160,12 +166,57 @@ class SyncController extends Controller
             $assignment->positionSummary = (string) $record->Position_Summary__c;
             $assignment->sector = (string) $record->Sector__c;
             $assignment->country = (string) $record->Country__r?->Name ?? '';
+
+            $this->processedRecords++;
+
+            // Skipping items if country has parenthesis
+            if (
+                stripos($assignment->country, '(') !== false ||
+                empty($assignment->country)
+            ) {
+                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country has parenthesis): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+
+                if (empty($id)) {
+                    continue;
+                }
+
+                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                continue;
+            }
+
+            // Publish status
             $assignment->publish = (string) $this->getPublishStatus($assignment);
+
+            if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
+                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+
+                if (empty($id)) {
+                    continue;
+                }
+
+                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                continue;
+            }
+
+            // Recruitment cycle
+            $recruitmentCycle = $this->getRecruitmentCycle($assignment);
+            $assignment->recruitmentStartDate = $recruitmentCycle->start;
+            $assignment->recruitmentEndDate = $recruitmentCycle->end;
+
+            if (empty($assignment->recruitmentStartDate) || empty($assignment->recruitmentEndDate)) {
+                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+
+                if (empty($id)) {
+                    continue;
+                }
+
+                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                continue;
+            }
 
             // Json data dump
             $this->json['Position__c'] = $record;
             $assignment->jsonContent = json_encode($this->json);
-            $this->processedRecords++;
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
             $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_GREEN);
@@ -173,6 +224,46 @@ class SyncController extends Controller
         }
 
 
+    }
+
+    protected function getRecruitmentCycle(Assignment $assignment): ?object
+    {
+        $validCycle = (object)[
+            'start' => '',
+            'end' => '',
+        ];
+
+        $query = new SalesforceQueryBuilder();
+        $query->select([
+            'Id',
+            'Name',
+            'Start_Date__c',
+            'End_Date__c',
+            'Position__r.Id'
+        ])
+        ->from('Recruitment__c')
+        ->where('Position__r.Id', '=', $assignment->salesforceId);
+
+        $response = $this->query($query);
+
+        if ($response->totalSize > 0) {
+            foreach ($response->records as $record) {
+
+                $currentDate = date('Ymd');
+                $startDate = date_format(date_create_from_format('Y-m-d',  $record->Start_Date__c), 'Ymd');
+                $endDate = date_format(date_create_from_format('Y-m-d',  $record->End_Date__c), 'Ymd');
+
+                if (
+                    $currentDate >= $startDate &&
+                    $currentDate <= $endDate
+                ) {
+                    $validCycle->start = $record->Start_Date__c;
+                    $validCycle->end = $record->End_Date__c;
+                }
+            }
+        }
+
+        return $validCycle;
     }
 
     protected function getPublishStatus(Assignment $assignment): ?string
@@ -268,6 +359,7 @@ class SyncController extends Controller
             }
 
             $this->stderr("Error: {$th}", Console::FG_RED);
+            dd($jsonResponse);
             exit;
         }
 
