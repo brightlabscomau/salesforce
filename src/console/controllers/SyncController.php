@@ -30,7 +30,9 @@ class SyncController extends Controller
     protected $totalRequests = 0;
     protected $totalRecords = 0;
     protected $processedRecords = 0;
-    protected $skippedRecords = [];
+    protected $updatedRecords = 0;
+    protected $skippedRecords = 0;
+    protected $deletedRecords = 0;
 
     public function beforeAction($action): bool
     {
@@ -103,9 +105,7 @@ class SyncController extends Controller
                 'LastModifiedDate',
                 '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r)'
             ])
-            ->from('Position__c')
-            // ->whereDate('Publish__c', 'IN', "('AVP Portal (Public)')");
-            ->whereDate('LastModifiedDate', '>=', 'LAST_N_DAYS:14');
+            ->from('Position__c');
 
 
             $response = $this->query($query);
@@ -126,10 +126,13 @@ class SyncController extends Controller
 
         /** Recursion :) */
         if (!$this->done) {
-            $this->actionAssignments($this->nextRecordsQuery);
+            return $this->actionAssignments($this->nextRecordsQuery);
         }
 
         $this->stdout("Total requests: {$this->totalRequests} \n", Console::FG_GREEN);
+        $this->stdout("Created/updated records: {$this->updatedRecords} \n", Console::FG_GREEN);
+        $this->stdout("Deleted records: {$this->deletedRecords} \n", Console::FG_GREEN);
+        $this->stdout("Skipped records: {$this->skippedRecords} \n", Console::FG_GREEN);
 
         return ExitCode::OK;
     }
@@ -175,42 +178,50 @@ class SyncController extends Controller
                 empty($assignment->country)
             ) {
                 $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country has parenthesis): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+                $this->skippedRecords++;
 
                 if (empty($id)) {
                     continue;
                 }
 
                 Salesforce::getInstance()->assignment->deleteAssignment($assignment);
-                continue;
-            }
-
-            // Publish status
-            $assignment->publish = (string) $this->getPublishStatus($assignment);
-
-            if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
-                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
-
-                if (empty($id)) {
-                    continue;
-                }
-
-                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                $this->deletedRecords++;
                 continue;
             }
 
             // Recruitment cycle
-            $recruitmentCycle = $this->getRecruitmentCycle($assignment);
+            $recruitmentCycle = $this->getRecruitmentCycle($record->Recruitment__r);
             $assignment->recruitmentStartDate = $recruitmentCycle->start;
             $assignment->recruitmentEndDate = $recruitmentCycle->end;
 
+            // Skipping items if invalid recruitment cycle
             if (empty($assignment->recruitmentStartDate) || empty($assignment->recruitmentEndDate)) {
                 $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+                $this->skippedRecords++;
 
                 if (empty($id)) {
                     continue;
                 }
 
                 Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                $this->deletedRecords++;
+                continue;
+            }
+
+            // Publish status
+            $assignment->publish = (string) $recruitmentCycle->publish;
+
+            // Skipping items if invalid publish type
+            if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
+                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+                $this->skippedRecords++;
+
+                if (empty($id)) {
+                    continue;
+                }
+
+                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                $this->deletedRecords++;
                 continue;
             }
 
@@ -220,34 +231,26 @@ class SyncController extends Controller
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
             $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_GREEN);
-
+            $this->updatedRecords++;
         }
 
 
     }
 
-    protected function getRecruitmentCycle(Assignment $assignment): ?object
+    protected function getRecruitmentCycle($recruitmentObj): ?object
     {
         $validCycle = (object)[
             'start' => '',
             'end' => '',
+            'publish' => '',
         ];
 
-        $query = new SalesforceQueryBuilder();
-        $query->select([
-            'Id',
-            'Name',
-            'Start_Date__c',
-            'End_Date__c',
-            'Position__r.Id'
-        ])
-        ->from('Recruitment__c')
-        ->where('Position__r.Id', '=', $assignment->salesforceId);
+        if (empty($recruitmentObj)) {
+            return $validCycle;
+        }
 
-        $response = $this->query($query);
-
-        if ($response->totalSize > 0) {
-            foreach ($response->records as $record) {
+        if ($recruitmentObj->totalSize > 0) {
+            foreach ($recruitmentObj->records as $record) {
 
                 $currentDate = date('Ymd');
                 $startDate = date_format(date_create_from_format('Y-m-d',  $record->Start_Date__c), 'Ymd');
@@ -259,29 +262,12 @@ class SyncController extends Controller
                 ) {
                     $validCycle->start = $record->Start_Date__c;
                     $validCycle->end = $record->End_Date__c;
+                    $validCycle->publish = $record->Publish__c;
                 }
             }
         }
 
         return $validCycle;
-    }
-
-    protected function getPublishStatus(Assignment $assignment): ?string
-    {
-        $query = new SalesforceQueryBuilder();
-        $query->select([
-            'Id',
-            'Name',
-            'Publish__c',
-            'Position__r.Id'
-        ])
-        ->from('Recruitment__c')
-        ->where('Position__r.Id', '=', $assignment->salesforceId)
-        ->limit(1);
-
-        $response = $this->query($query);
-
-        return $response->records[0]->Publish__c ?? '';
     }
 
     protected function getNextRecordQuery($nextRecordsUrl=null): ?string

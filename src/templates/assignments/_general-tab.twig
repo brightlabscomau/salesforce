@@ -121,6 +121,26 @@
       }) }}
 
       {{ forms.textField({
+        label: 'Recruitment Cycle Start'|t('salesforce'),
+        id: 'recruitmentStartDate',
+        name: 'recruitmentStartDate',
+        value: assignment.recruitmentStartDate,
+        required: true,
+        errors: assignment.getErrors('recruitmentStartDate'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
+        label: 'Recruitment Cycle End'|t('salesforce'),
+        id: 'recruitmentEndDate',
+        name: 'recruitmentEndDate',
+        value: assignment.recruitmentEndDate,
+        required: true,
+        errors: assignment.getErrors('recruitmentEndDate'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
         label: 'Publish'|t('salesforce'),
         id: 'publish',
         name: 'publish',
