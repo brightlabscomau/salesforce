@@ -29,6 +29,57 @@ class AssignmentQuery extends ElementQuery
         return $this;
     }
 
+    public function types(): self
+    {
+        $this->groupBy = ['hybridVolunteeringNature'];
+
+        return $this;
+    }
+
+    public function sectors(): self
+    {
+        $this->groupBy = ['sector'];
+
+        return $this;
+    }
+
+    public function countries(): self
+    {
+        $this->groupBy = ['country'];
+
+        return $this;
+    }
+
+    public function filterByTypes($types=[]): self
+    {
+        $this->andWhere(['hybridVolunteeringNature' => $types]);
+        return $this;
+    }
+
+    public function filterBySectors($sectors=[]): self
+    {
+        $this->andWhere(['sector' => $sectors]);
+        return $this;
+    }
+
+    public function filterByCountries($countries=[]): self
+    {
+        $this->andWhere(['country' => $countries]);
+        return $this;
+    }
+
+    public function isPublic(): self
+    {
+        $this->andWhere(['publish' => 'AVP Portal (Public)']);
+        return $this;
+    }
+
+    public function isInRecruitmentCycle(): self
+    {
+        // $this->where()
+        return $this;
+    }
+
     protected function beforePrepare(): bool
     {
         // todo: join the `assignments` table

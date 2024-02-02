@@ -114,4 +114,52 @@ class AssignmentsController extends Controller
         $this->setSuccessFlash(Craft::t('salesforce', 'Assignment saved.'));
         return $this->redirectToPostedUrl($assignment);
     }
+
+    public function actionGet($q=null, $types=null, $sectors=null, $countries=null) {
+
+        $assignmentElement = Assignment::find();
+
+        if (!empty($q)) {
+            $assignmentElement->search($q);
+        }
+
+        if (!empty($types)) {
+            $assignmentElement->filterByTypes(explode(',', $types));
+        }
+
+        if (!empty($sectors)) {
+            $assignmentElement->filterBySectors(explode(',', $sectors));
+        }
+
+        if (!empty($countries)) {
+            $assignmentElement->filterByCountries(explode(',', $countries));
+        }
+
+        $assignments =  $assignmentElement->limit(20)
+        ->isPublic()
+        ->all();
+
+        return $this->asJson([
+            'types' => $types,
+            'assignments' => array_map(function($assignment) {
+                return (object) [
+                    'salesforceId' => $assignment->salesforceId,
+                    'title' => $assignment->title,
+                    'hybridVolunteeringNature' => $assignment->hybridVolunteeringNature,
+                    'workplace' => $assignment->workplace,
+                    'duration' => $assignment->duration,
+                    'startDate' => $assignment->startDate,
+                    'positionDescriptionUrl' => $assignment->positionDescriptionUrl,
+                    'applicationCloseDate' => $assignment->applicationCloseDate,
+                    'positionSummary' => substr(strip_tags($assignment->positionSummary), 0, 50) . '...',
+                    'sector' => $assignment->sector,
+                    'country' => $assignment->country,
+                    'publish' => $assignment->publish,
+                    'recruitmentStartDate' => $assignment->recruitmentStartDate,
+                    'recruitmentEndDate' => $assignment->recruitmentEndDate,
+                    'url' => $assignment->url
+                ];
+            }, $assignments)
+        ]);
+    }
 }
