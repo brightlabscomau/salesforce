@@ -11,6 +11,7 @@ use brightlabs\craftsalesforce\Salesforce;
 use brightlabs\craftsalesforce\elements\Assignment;
 use brightlabs\craftsalesforce\models\Assignment as AssignmentModel;
 use craft\elements\db\ElementQueryInterface;
+use yii\data\Pagination;
 
 class AssignmentsController extends Controller
 {
@@ -116,8 +117,9 @@ class AssignmentsController extends Controller
         return $this->redirectToPostedUrl($assignment);
     }
 
-    public function actionGet($q=null, $types=null, $sectors=null, $countries=null, $sort='Sort by Closing Date (Soonest)') {
+    public function actionGet($q=null, $types=null, $sectors=null, $countries=null, $sort='Sort by Closing Date (Soonest)', $page=0) {
 
+        $pageLimit = 5;
         $assignmentElement = Assignment::find();
 
         if (!empty($q)) {
@@ -138,9 +140,18 @@ class AssignmentsController extends Controller
 
         $assignmentElement = $this->sortResults($assignmentElement, $sort);
 
-        $assignments =  $assignmentElement->limit(20)
-        ->isPublic()
-        ->all();
+        $query =  $assignmentElement->isPublic();
+        $countQuery = clone $query;
+        $pages = new Pagination([
+            'totalCount' => $countQuery->count(),
+            'defaultPageSize' => $pageLimit
+        ]);
+
+        $pages->setPage($page);
+
+        $assignments = $query->offset($pages->offset)
+            ->limit($pages->limit)
+            ->all();
 
         return $this->asJson([
             'q' => $q,
@@ -166,15 +177,17 @@ class AssignmentsController extends Controller
                     'url' => $assignment->url
                 ];
             }, $assignments),
-            'pagination' => (object) [
-                'total' => sizeof($assignments),
-                'start' => '',
-                'end' => '',
+            'pagination' => (object)[
+                'totalCount' => (int) $pages->totalCount,
+                'currentPage' => (int) $page,
+                'resultRange' => $this->getResultRange($pages, $pageLimit,  $page),
+                'pages' => $this->getPageNumbers($pages),
+                'links' => $this->getLinks($pages)
             ]
         ]);
     }
 
-    public function sortResults(ElementQueryInterface $assignmentElement, $sort=''): ElementQueryInterface
+    protected function sortResults(ElementQueryInterface $assignmentElement, $sort=''): ElementQueryInterface
     {
         if (empty($sort) || $sort == 'Closing Date (Soonest)') {
 
@@ -206,5 +219,61 @@ class AssignmentsController extends Controller
         }
 
         return $assignmentElement;
+    }
+
+    protected function getPageNumbers(Pagination $pages): object
+    {
+        $numbers = [];
+
+        for ($i=0; $i < $pages->totalCount/$pages->defaultPageSize; $i++) {
+            $numbers[] = $i;
+        }
+
+        return (object)[
+            'numbers' => $numbers,
+        ];
+    }
+
+    protected function getLinks(Pagination $pages): object
+    {
+        $links = $pages->getLinks(true);
+
+        return (object) [
+            'self' => $this->getPageNumberFromLink($links['self'] ?? '') - 1,
+            'first' => $this->getPageNumberFromLink($links['first'] ?? '') - 1,
+            'next' => $this->getPageNumberFromLink($links['next'] ?? '') - 1,
+            'prev' => $this->getPageNumberFromLink($links['prev'] ?? '') - 1,
+            'last' => $this->getPageNumberFromLink($links['last'] ?? '') - 1
+        ];
+    }
+
+    protected function getPageNumberFromLink($link): int
+    {
+        return explode('&page=', $link ?? false)[1] ?? -1;
+    }
+
+    protected function getResultRange($pages, $pageLimit, $currentPage): object
+    {
+        $start = 0;
+        $end = 0;
+
+        if ($pages->totalCount == 0) {
+            $start = 0;
+            $end = 0;
+        } else if ($pages->totalCount <= $pageLimit) {
+            $start = 1;
+            $end = (int) $pages->totalCount;
+        } else if ($currentPage == floor(($pages->totalCount/$pageLimit))) {
+            $start = ($pageLimit * $currentPage) + 1;
+            $end = (int) $pages->totalCount;
+        } else {
+            $start = ($pageLimit * $currentPage) + 1;
+            $end = ($pageLimit * $currentPage) + $pageLimit;
+        }
+
+        return (object) [
+            'start' => $start,
+            'end' => $end
+        ];
     }
 }
