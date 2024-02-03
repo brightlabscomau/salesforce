@@ -172,12 +172,9 @@ class SyncController extends Controller
 
             $this->processedRecords++;
 
-            // Skipping items if country has parenthesis
-            if (
-                stripos($assignment->country, '(') !== false ||
-                empty($assignment->country)
-            ) {
-                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country has parenthesis): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+            // Skipping items if country is empty
+            if (empty($assignment->country)) {
+                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
                 $this->skippedRecords++;
 
                 if (empty($id)) {
@@ -187,6 +184,12 @@ class SyncController extends Controller
                 Salesforce::getInstance()->assignment->deleteAssignment($assignment);
                 $this->deletedRecords++;
                 continue;
+            }
+
+            // Rename country if it has parentheses
+            if (stripos($assignment->country, '(') !== false) {
+                $assignment->country = trim(explode('(', $assignment->country)[0]);
+                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId} \n", Console::FG_YELLOW);
             }
 
             // Recruitment cycle
