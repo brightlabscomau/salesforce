@@ -10,6 +10,7 @@ use yii\web\BadRequestHttpException;
 use brightlabs\craftsalesforce\Salesforce;
 use brightlabs\craftsalesforce\elements\Assignment;
 use brightlabs\craftsalesforce\models\Assignment as AssignmentModel;
+use craft\elements\db\ElementQueryInterface;
 
 class AssignmentsController extends Controller
 {
@@ -115,7 +116,7 @@ class AssignmentsController extends Controller
         return $this->redirectToPostedUrl($assignment);
     }
 
-    public function actionGet($q=null, $types=null, $sectors=null, $countries=null) {
+    public function actionGet($q=null, $types=null, $sectors=null, $countries=null, $sort='Sort by Closing Date (Soonest)') {
 
         $assignmentElement = Assignment::find();
 
@@ -135,12 +136,17 @@ class AssignmentsController extends Controller
             $assignmentElement->filterByCountries(explode(',', $countries));
         }
 
+        $assignmentElement = $this->sortResults($assignmentElement, $sort);
+
         $assignments =  $assignmentElement->limit(20)
         ->isPublic()
         ->all();
 
         return $this->asJson([
+            'q' => $q,
             'types' => $types,
+            'sectors' => $sectors,
+            'countries' => $countries,
             'assignments' => array_map(function($assignment) {
                 return (object) [
                     'salesforceId' => $assignment->salesforceId,
@@ -159,7 +165,46 @@ class AssignmentsController extends Controller
                     'recruitmentEndDate' => $assignment->recruitmentEndDate,
                     'url' => $assignment->url
                 ];
-            }, $assignments)
+            }, $assignments),
+            'pagination' => (object) [
+                'total' => sizeof($assignments),
+                'start' => '',
+                'end' => '',
+            ]
         ]);
+    }
+
+    public function sortResults(ElementQueryInterface $assignmentElement, $sort=''): ElementQueryInterface
+    {
+        if (empty($sort) || $sort == 'Closing Date (Soonest)') {
+
+            $assignmentElement->sortByClosingDateSoon();
+        }
+
+        if ($sort == 'Closing Date (Furthest)') {
+            $assignmentElement->sortByClosingDateFurthest();
+        }
+
+        if ($sort == 'Relevance') {
+            // todo: no idea how to sort this
+        }
+
+        if ($sort == 'Duration (Shortest)') {
+            $assignmentElement->sortByDurationShortest();
+        }
+
+        if ($sort == 'Duration (Longest)') {
+            $assignmentElement->sortByDurationLongest();
+        }
+
+        if ($sort == 'Country') {
+            $assignmentElement->sortByCountry();
+        }
+
+        if ($sort == 'Sector') {
+            $assignmentElement->sortBySector();
+        }
+
+        return $assignmentElement;
     }
 }

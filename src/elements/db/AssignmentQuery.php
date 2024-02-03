@@ -76,7 +76,42 @@ class AssignmentQuery extends ElementQuery
 
     public function isInRecruitmentCycle(): self
     {
-        // $this->where()
+        return $this;
+    }
+
+    public function sortByClosingDateSoon(): self
+    {
+        $this->orderBy('applicationCloseDate ASC');
+        return $this;
+    }
+
+    public function sortByClosingDateFurthest(): self
+    {
+        $this->orderBy('applicationCloseDate DESC');
+        return $this;
+    }
+
+    public function sortByDurationShortest(): self
+    {
+        $this->orderBy('duration ASC');
+        return $this;
+    }
+
+    public function sortByDurationLongest(): self
+    {
+        $this->orderBy('duration DESC');
+        return $this;
+    }
+
+    public function sortByCountry(): self
+    {
+        $this->orderBy('country ASC');
+        return $this;
+    }
+
+    public function sortBySector(): self
+    {
+        $this->orderBy('sector ASC');
         return $this;
     }
 

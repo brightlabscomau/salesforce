@@ -29,7 +29,7 @@ class Install extends Migration
             'salesforceId' => $this->char(100)->notNull(),
             'hybridVolunteeringNature' => $this->char(255)->null(),
             'workplace' => $this->char(255)->null(),
-            'duration' => $this->char(255)->null(),
+            'duration' => $this->integer()->null(),
             'startDate' => $this->char(10)->null(),
             'positionDescriptionUrl' => $this->tinyText()->null(),
             'applicationCloseDate' => $this->char(10)->null(),
