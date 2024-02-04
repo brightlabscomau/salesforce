@@ -102,8 +102,10 @@ class SyncController extends Controller
                 'Position_Summary__c',
                 'Base_Allowance_Figure__c',
                 'Living_Allowance_Copy__c',
+                'Special_Conditions_Copy__c',
                 'Sector__c',
                 'Country__r.Name',
+                'PD_Link__c',
                 'LastModifiedDate',
                 '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r)'
             ])
@@ -171,8 +173,11 @@ class SyncController extends Controller
             $assignment->positionSummary = (string) $record->Position_Summary__c;
             $assignment->baseAllowance = (string) $record->Base_Allowance_Figure__c;
             $assignment->livingAllowance = (string) $record->Living_Allowance_Copy__c;
+            $assignment->specialConditions = (string) $record->Special_Conditions_Copy__c;
             $assignment->sector = (string) $record->Sector__c;
             $assignment->country = (string) $record->Country__r?->Name ?? '';
+
+            $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(PD_Link__c): {$record->PD_Link__c}\n", Console::FG_BLUE);
 
             $this->processedRecords++;
 
@@ -238,6 +243,10 @@ class SyncController extends Controller
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
             $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_GREEN);
+
+
+            dd($assignment->url);
+
             $this->updatedRecords++;
         }
 

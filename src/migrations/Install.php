@@ -36,6 +36,7 @@ class Install extends Migration
             'positionSummary' => $this->longText()->null(),
             'baseAllowance' => $this->longText()->null(),
             'livingAllowance' => $this->longText()->null(),
+            'specialConditions' => $this->longText()->null(),
             'sector' => $this->char('255')->null(),
             'country' => $this->char(100)->null(),
             'publish' => $this->char(100)->null(),

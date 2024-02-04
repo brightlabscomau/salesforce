@@ -63,6 +63,7 @@ class AssignmentsController extends Controller
         $positionSummary = $this->request->getBodyParam('positionSummary');
         $baseAllowance = $this->request->getBodyParam('baseAllowance');
         $livingAllowance = $this->request->getBodyParam('livingAllowance');
+        $specialConditions = $this->request->getBodyParam('specialConditions');
         $sector = $this->request->getBodyParam('sector');
         $country = $this->request->getBodyParam('country');
         $publish = $this->request->getBodyParam('publish');
@@ -92,6 +93,7 @@ class AssignmentsController extends Controller
         $assignment->positionSummary = $positionSummary;
         $assignment->baseAllowance = $baseAllowance;
         $assignment->livingAllowance = $livingAllowance;
+        $assignment->specialConditions = $specialConditions;
         $assignment->sector = $sector;
         $assignment->country = $country;
         $assignment->publish = $publish;
@@ -123,7 +125,7 @@ class AssignmentsController extends Controller
 
     public function actionGet($q=null, $types=null, $sectors=null, $countries=null, $sort='Sort by Closing Date (Soonest)', $page=0) {
 
-        $pageLimit = 5;
+        $pageLimit = 10;
         $assignmentElement = Assignment::find();
 
         if (!empty($q)) {

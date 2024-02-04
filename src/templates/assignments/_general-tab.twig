@@ -122,6 +122,17 @@
         rows: 20,
       }) }}
 
+      {{ forms.textareaField({
+        label: 'Special Conditions'|t('salesforce'),
+        id: 'specialConditions',
+        name: 'specialConditions',
+        value: assignment.specialConditions,
+        required: true,
+        errors: assignment.getErrors('specialConditions'),
+        readonly: true,
+        rows: 20,
+      }) }}
+
       {{ forms.textField({
         label: 'Sector'|t('salesforce'),
         id: 'sector',

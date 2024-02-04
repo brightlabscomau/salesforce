@@ -31,6 +31,7 @@ class Assignment extends Element
     public ?string $positionSummary = null;
     public ?string $baseAllowance = null;
     public ?string $livingAllowance = null;
+    public ?string $specialConditions = null;
     public ?string $sector = null;
     public ?string $country = null;
     public ?string $publish = null;
@@ -304,6 +305,7 @@ class Assignment extends Element
             'positionSummary' => $this->positionSummary,
             'baseAllowance' => $this->baseAllowance,
             'livingAllowance' => $this->livingAllowance,
+            'specialConditions' => $this->specialConditions,
             'sector' => $this->sector,
             'country' => $this->country,
             'publish' => $this->publish,
@@ -326,6 +328,7 @@ class Assignment extends Element
                 'positionSummary' => $this->positionSummary,
                 'baseAllowance' => $this->baseAllowance,
                 'livingAllowance' => $this->livingAllowance,
+                'specialConditions' => $this->specialConditions,
                 'sector' => $this->sector,
                 'country' => $this->country,
                 'publish' => $this->publish,
