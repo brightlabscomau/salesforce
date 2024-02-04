@@ -29,6 +29,8 @@ class Assignment extends Element
     public ?string $positionDescriptionUrl = null;
     public ?string $applicationCloseDate = null;
     public ?string $positionSummary = null;
+    public ?string $baseAllowance = null;
+    public ?string $livingAllowance = null;
     public ?string $sector = null;
     public ?string $country = null;
     public ?string $publish = null;
@@ -300,6 +302,8 @@ class Assignment extends Element
             'positionDescriptionUrl' => $this->positionDescriptionUrl,
             'applicationCloseDate' => $this->applicationCloseDate,
             'positionSummary' => $this->positionSummary,
+            'baseAllowance' => $this->baseAllowance,
+            'livingAllowance' => $this->livingAllowance,
             'sector' => $this->sector,
             'country' => $this->country,
             'publish' => $this->publish,
@@ -320,6 +324,8 @@ class Assignment extends Element
                 'positionDescriptionUrl' => $this->positionDescriptionUrl,
                 'applicationCloseDate' => $this->applicationCloseDate,
                 'positionSummary' => $this->positionSummary,
+                'baseAllowance' => $this->baseAllowance,
+                'livingAllowance' => $this->livingAllowance,
                 'sector' => $this->sector,
                 'country' => $this->country,
                 'publish' => $this->publish,

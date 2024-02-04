@@ -17,6 +17,8 @@ class Assignment extends Model
     public $positionDescriptionUrl = null;
     public $applicationCloseDate = null;
     public $positionSummary = null;
+    public $baseAllowance = null;
+    public $livingAllowance = null;
     public $sector = null;
     public $country = null;
     public $publish = null;
@@ -38,6 +40,8 @@ class Assignment extends Model
                     'positionDescriptionUrl',
                     'applicationCloseDate',
                     'positionSummary',
+                    'baseAllowance',
+                    'livingAllowance',
                     'sector',
                     'country',
                     'publish',

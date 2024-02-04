@@ -100,6 +100,28 @@
         rows: 20,
       }) }}
 
+      {{ forms.textareaField({
+        label: 'Base Allowance'|t('salesforce'),
+        id: 'baseAllowance',
+        name: 'baseAllowance',
+        value: assignment.baseAllowance,
+        required: true,
+        errors: assignment.getErrors('baseAllowance'),
+        readonly: true,
+        rows: 2,
+      }) }}
+
+      {{ forms.textareaField({
+        label: 'Living Allowance'|t('salesforce'),
+        id: 'livingAllowance',
+        name: 'livingAllowance',
+        value: assignment.livingAllowance,
+        required: true,
+        errors: assignment.getErrors('livingAllowance'),
+        readonly: true,
+        rows: 20,
+      }) }}
+
       {{ forms.textField({
         label: 'Sector'|t('salesforce'),
         id: 'sector',

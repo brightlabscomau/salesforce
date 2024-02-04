@@ -129,6 +129,8 @@ class AssignmentQuery extends ElementQuery
             'salesforce_assignments.positionDescriptionUrl',
             'salesforce_assignments.applicationCloseDate',
             'salesforce_assignments.positionSummary',
+            'salesforce_assignments.baseAllowance',
+            'salesforce_assignments.livingAllowance',
             'salesforce_assignments.sector',
             'salesforce_assignments.country',
             'salesforce_assignments.publish',

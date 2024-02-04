@@ -61,6 +61,8 @@ class AssignmentsController extends Controller
         $positionDescriptionUrl = $this->request->getBodyParam('positionDescriptionUrl');
         $applicationCloseDate = $this->request->getBodyParam('applicationCloseDate');
         $positionSummary = $this->request->getBodyParam('positionSummary');
+        $baseAllowance = $this->request->getBodyParam('baseAllowance');
+        $livingAllowance = $this->request->getBodyParam('livingAllowance');
         $sector = $this->request->getBodyParam('sector');
         $country = $this->request->getBodyParam('country');
         $publish = $this->request->getBodyParam('publish');
@@ -88,6 +90,8 @@ class AssignmentsController extends Controller
         $assignment->positionDescriptionUrl = $positionDescriptionUrl;
         $assignment->applicationCloseDate = $applicationCloseDate;
         $assignment->positionSummary = $positionSummary;
+        $assignment->baseAllowance = $baseAllowance;
+        $assignment->livingAllowance = $livingAllowance;
         $assignment->sector = $sector;
         $assignment->country = $country;
         $assignment->publish = $publish;

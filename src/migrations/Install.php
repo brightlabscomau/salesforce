@@ -34,6 +34,8 @@ class Install extends Migration
             'positionDescriptionUrl' => $this->tinyText()->null(),
             'applicationCloseDate' => $this->char(10)->null(),
             'positionSummary' => $this->longText()->null(),
+            'baseAllowance' => $this->longText()->null(),
+            'livingAllowance' => $this->longText()->null(),
             'sector' => $this->char('255')->null(),
             'country' => $this->char(100)->null(),
             'publish' => $this->char(100)->null(),

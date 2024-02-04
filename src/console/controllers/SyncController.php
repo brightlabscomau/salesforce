@@ -100,6 +100,8 @@ class SyncController extends Controller
                 'Position_Description_URL__c',
                 'Application_Close_Date__c',
                 'Position_Summary__c',
+                'Base_Allowance_Figure__c',
+                'Living_Allowance_Copy__c',
                 'Sector__c',
                 'Country__r.Name',
                 'LastModifiedDate',
@@ -167,6 +169,8 @@ class SyncController extends Controller
             $assignment->positionDescriptionUrl = (string) $record->Position_Description_URL__c;
             $assignment->applicationCloseDate = (string) $record->Application_Close_Date__c;
             $assignment->positionSummary = (string) $record->Position_Summary__c;
+            $assignment->baseAllowance = (string) $record->Base_Allowance_Figure__c;
+            $assignment->livingAllowance = (string) $record->Living_Allowance_Copy__c;
             $assignment->sector = (string) $record->Sector__c;
             $assignment->country = (string) $record->Country__r?->Name ?? '';
 
