@@ -8,6 +8,7 @@ use craft\helpers\Console;
 use craft\console\Controller;
 use brightlabs\craftsalesforce\Salesforce;
 use brightlabs\craftsalesforce\elements\Assignment;
+use brightlabs\craftsalesforce\elements\Log;
 use brightlabs\craftsalesforce\inc\SalesforceQueryBuilder;
 
 class SyncController extends Controller
@@ -33,6 +34,7 @@ class SyncController extends Controller
     protected $updatedRecords = 0;
     protected $skippedRecords = 0;
     protected $deletedRecords = 0;
+    protected $logEntries = [];
 
     public function beforeAction($action): bool
     {
@@ -77,8 +79,21 @@ class SyncController extends Controller
 
         curl_close($curl);
 
-        $displayToken = substr($jsonResponse->access_token, 0, 7);
-        $this->stdout("Retrieved access token: {$displayToken}... \n", Console::FG_BLUE);
+        try {
+            $displayToken = substr($jsonResponse->access_token, 0, 7);
+            $this->stdout("Retrieved access token: {$displayToken}... \n", Console::FG_BLUE);
+            $this->logEntries[] = "Retrieved access token: {$displayToken}... \n";
+
+        } catch (\Throwable $th) {
+
+            $log = new Log();
+            $log->title = date('jS M Y g:i:s a');
+            $log->logErrors = $th->getMessage();
+            Salesforce::getInstance()->log->saveLog($log);
+
+            dd('Missing plugin configuration');
+        }
+
 
         return $jsonResponse->access_token ?? '';
     }
@@ -118,6 +133,7 @@ class SyncController extends Controller
         if (!empty($nextQuery) && !$this->done)
         {
             $this->stdout("Recursion query: {$this->nextRecordsQuery} \n", Console::FG_BLUE);
+            $this->logEntries[] = "Recursion query: {$this->nextRecordsQuery} \n";
 
             $this->getSalesforceToken();
 
@@ -134,9 +150,18 @@ class SyncController extends Controller
         }
 
         $this->stdout("Total requests: {$this->totalRequests} \n", Console::FG_GREEN);
+        $this->logEntries[] = "Total requests: {$this->totalRequests} \n";
+
         $this->stdout("Created/updated records: {$this->updatedRecords} \n", Console::FG_GREEN);
+        $this->logEntries[] = "Created/updated records: {$this->updatedRecords} \n";
+
         $this->stdout("Deleted records: {$this->deletedRecords} \n", Console::FG_GREEN);
+        $this->logEntries[] = "Deleted records: {$this->deletedRecords} \n";
+
         $this->stdout("Skipped records: {$this->skippedRecords} \n", Console::FG_GREEN);
+        $this->logEntries[] = "Skipped records: {$this->skippedRecords} \n";
+
+        $this->logSuccess();
 
         return ExitCode::OK;
     }
@@ -182,6 +207,7 @@ class SyncController extends Controller
             // Skipping items if country is empty
             if (empty($assignment->country)) {
                 $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId} \n";
                 $this->skippedRecords++;
 
                 if (empty($id)) {
@@ -197,6 +223,7 @@ class SyncController extends Controller
             if (stripos($assignment->country, '(') !== false) {
                 $assignment->country = trim(explode('(', $assignment->country)[0]);
                 $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId} \n", Console::FG_YELLOW);
+                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId} \n";
             }
 
             // Recruitment cycle
@@ -207,6 +234,7 @@ class SyncController extends Controller
             // Skipping items if invalid recruitment cycle
             if (empty($assignment->recruitmentStartDate) || empty($assignment->recruitmentEndDate)) {
                 $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId} \n";
                 $this->skippedRecords++;
 
                 if (empty($id)) {
@@ -224,6 +252,7 @@ class SyncController extends Controller
             // Skipping items if invalid publish type
             if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
                 $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
+                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId} \n";
                 $this->skippedRecords++;
 
                 if (empty($id)) {
@@ -241,15 +270,18 @@ class SyncController extends Controller
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
             $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_GREEN);
+            $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n";
 
 
             if (!empty($record->PD_Link__c)) {
                 $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(existing PD_Link__c): {$record->PD_Link__c}\n", Console::FG_BLUE);
+                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Info(existing PD_Link__c): {$record->PD_Link__c}\n";
             }
 
             $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', $assignment->url);
 
             $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(update PD_Link__c): {$assignment->url}\n", Console::FG_BLUE);
+            $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Info(update PD_Link__c): {$assignment->url}\n";
 
             $this->updatedRecords++;
         }
@@ -352,6 +384,11 @@ class SyncController extends Controller
 
         } catch (\Throwable $th) {
 
+            $log = new Log();
+            $log->title = date('jS M Y g:i:s a');
+            $log->logErrors = $th->getMessage();
+            Salesforce::getInstance()->log->saveLog($log);
+
             $error = $jsonResponse[0] ?? (object)['errorCode' => 'MISSING_CREDENTIALS'];
 
             if ($error->errorCode == 'INVALID_AUTH_HEADER') {
@@ -405,5 +442,19 @@ class SyncController extends Controller
         curl_close($curl);
 
         return true;
+    }
+
+    protected function logSuccess()
+    {
+        $logString = "";
+
+        foreach ($this->logEntries as $entry) {
+            $logString .= $entry;
+        }
+
+        $log = new Log();
+        $log->title = date('jS M Y g:i:s a');
+        $log->logDetails = $logString;
+        Salesforce::getInstance()->log->saveLog($log);
     }
 }

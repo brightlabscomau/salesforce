@@ -11,6 +11,7 @@ use craft\db\Migration;
 class Install extends Migration
 {
     protected $table = '{{%salesforce_assignments}}';
+    protected $tableLog = '{{%salesforce_logs}}';
 
     /**
      * @inheritdoc
@@ -59,6 +60,25 @@ class Install extends Migration
             null
         );
 
+        $this->createTable($this->tableLog, [
+            'id' => $this->primaryKey(),
+            'logDetails' => $this->longText()->null(),
+            'logErrors' => $this->longText()->null(),
+            'dateCreated' => $this->dateTime()->notNull(),
+            'dateUpdated' => $this->dateTime()->notNull(),
+            'uid' => $this->uid(),
+        ]);
+
+        $this->addForeignKey(
+            null,
+            $this->tableLog,
+            'id',
+            '{{%elements}}',
+            'id',
+            'CASCADE',
+            null
+        );
+
         return true;
     }
 
@@ -70,6 +90,9 @@ class Install extends Migration
         // Place uninstallation code here...
         $this->dropAllForeignKeysToTable($this->table);
         $this->dropTableIfExists($this->table);
+
+        $this->dropAllForeignKeysToTable($this->tableLog);
+        $this->dropTableIfExists($this->tableLog);
 
         return true;
     }

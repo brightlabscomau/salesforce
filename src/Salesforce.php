@@ -4,8 +4,10 @@ namespace brightlabs\craftsalesforce;
 
 use Craft;
 use brightlabs\craftsalesforce\elements\Assignment;
+use brightlabs\craftsalesforce\elements\Log;
 use brightlabs\craftsalesforce\models\Settings;
 use brightlabs\craftsalesforce\services\Assignment as AssignmentService;
+use brightlabs\craftsalesforce\services\Log as LogService;
 use brightlabs\craftsalesforce\variables\CraftVariableBehavior;
 use craft\base\Model;
 use craft\base\Plugin;
@@ -31,6 +33,7 @@ use yii\base\Event;
  * @copyright Bright Labs
  * @license MIT
  * @property-read AssignmentService $assignment
+ * @property-read LogService $log
  */
 class Salesforce extends Plugin
 {
@@ -40,7 +43,10 @@ class Salesforce extends Plugin
     public static function config(): array
     {
         return [
-            'components' => ['assignment' => AssignmentService::class],
+            'components' => [
+                'assignment' => AssignmentService::class,
+                'log' => LogService::class
+            ],
         ];
     }
 
@@ -81,11 +87,11 @@ class Salesforce extends Plugin
         // (see https://craftcms.com/docs/4.x/extend/events.html to get started)
         Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES, function (RegisterComponentTypesEvent $event) {
             $event->types[] = Assignment::class;
+            $event->types[] = Log::class;
         });
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES, function (RegisterUrlRulesEvent $event) {
-            // $event->rules['assignments'] = ['template' => 'salesforce/assignments/_index.twig'];
-            // $event->rules['salesforce/assignments/<elementId:\\d+>'] = 'elements/edit';
             $event->rules['salesforce/assignments/<assignmentId:\\d+>'] = 'salesforce/assignments/edit';
+            $event->rules['logs/<logId:\\d+>'] = 'salesforce/logs/edit';
         });
 
         Event::on(
@@ -99,6 +105,10 @@ class Salesforce extends Plugin
                         'assignments' => [
                             'label' => 'Assignments',
                             'url' => 'salesforce/assignments'
+                        ],
+                        'logs' => [
+                            'label' => 'Logs',
+                            'url' => 'salesforce/logs'
                         ],
                         'settings' => [
                             'label' => 'Settings',
@@ -119,6 +129,9 @@ class Salesforce extends Plugin
                 $event->rules['salesforce'] = 'salesforce/assignments';
                 $event->rules['salesforce/fields'] = 'salesforce/settings/fields';
                 $event->rules['salesforce/test'] = 'salesforce/test';
+
+                $event->rules['salesforce/logs'] = 'salesforce/logs';
+
             }
         );
 
@@ -129,22 +142,6 @@ class Salesforce extends Plugin
                 $event->sender->attachBehaviors([
                     CraftVariableBehavior::class
                 ]);
-            }
-        );
-
-        Event::on(
-            FieldLayout::class,
-            FieldLayout::EVENT_DEFINE_NATIVE_FIELDS,
-            function (DefineFieldLayoutFieldsEvent $event) {
-                // $fieldLayout = $event->sender;
-
-                // $event->fields[] = [
-                //     'class' => TextField::class,
-                //     'label' => 'Title',
-                //     'attribute' => 'title',
-                //     'type' => 'text',
-                //     'mandatory' => true,
-                // ];
             }
         );
     }

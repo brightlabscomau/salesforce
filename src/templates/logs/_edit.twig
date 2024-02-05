@@ -1,0 +1,49 @@
+{% extends '_layouts/cp.twig' %}
+{% import '_includes/forms.twig' as forms %}
+
+{% set title = 'View Log'|t('salesforce') %}
+
+{% set tabs = {
+  general: {
+    label: 'Details'|t('salesforce'),
+    url: '#one',
+  },
+  json: {
+    label: 'Errors'|t('salesforce'),
+    url: '#two'
+  }
+} %}
+
+{% block content %}
+    {{ actionInput('salesforce/logs/save') }}
+    {{ redirectInput('salesforce/logs') }}
+
+    <div id="one">
+
+        {{ forms.textareaField({
+            label: 'Details'|t('salesforce'),
+            id: 'logDetails',
+            name: 'logDetails',
+            value: log.logDetails,
+            required: true,
+            errors: log.getErrors('logDetails'),
+            readonly: true,
+            rows: 20,
+          })
+        }}
+    </div>
+    <div id="two" class="hidden">
+        {{ forms.textareaField({
+            label: 'Errors'|t('salesforce'),
+            id: 'logErrors',
+            name: 'logErrors',
+            value: log.logErrors,
+            required: true,
+            errors: log.getErrors('logErrors'),
+            readonly: true,
+            rows: 20,
+          })
+        }}
+    </div>
+
+{% endblock content %}
