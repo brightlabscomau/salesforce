@@ -177,8 +177,6 @@ class SyncController extends Controller
             $assignment->sector = (string) $record->Sector__c;
             $assignment->country = (string) $record->Country__r?->Name ?? '';
 
-            $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(PD_Link__c): {$record->PD_Link__c}\n", Console::FG_BLUE);
-
             $this->processedRecords++;
 
             // Skipping items if country is empty
@@ -245,7 +243,13 @@ class SyncController extends Controller
             $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_GREEN);
 
 
-            dd($assignment->url);
+            if (!empty($record->PD_Link__c)) {
+                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(existing PD_Link__c): {$record->PD_Link__c}\n", Console::FG_BLUE);
+            }
+
+            $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', $assignment->url);
+
+            $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(update PD_Link__c): {$assignment->url}\n", Console::FG_BLUE);
 
             $this->updatedRecords++;
         }
@@ -365,5 +369,41 @@ class SyncController extends Controller
             exit;
         }
 
+    }
+
+    /**
+     * Set Salesforce field
+     *
+     * @param string $salesforceObject Salesforce object
+     * @param string $field Salesforce field name
+     * @param string $key Salesforce id of the record
+     * @param string $value Any value
+     * @return bool
+     */
+    protected function setField($salesforceObject, $field, $key, $value): bool
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/'. $this->salesforceApiVersion .'/sobjects/' . $salesforceObject . '/' . $field,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_POSTFIELDS => json_encode([$key => $value]),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->salesforceToken,
+            ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+
+        return true;
     }
 }
