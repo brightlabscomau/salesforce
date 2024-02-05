@@ -159,7 +159,7 @@ class AssignmentsController extends Controller
             ->limit($pages->limit)
             ->all();
 
-        return $this->asJson([
+        $response = [
             'q' => $q,
             'types' => $types,
             'sectors' => $sectors,
@@ -174,7 +174,7 @@ class AssignmentsController extends Controller
                     'startDate' => $assignment->startDate,
                     'positionDescriptionUrl' => $assignment->positionDescriptionUrl,
                     'applicationCloseDate' => $assignment->applicationCloseDate,
-                    'positionSummary' => substr(strip_tags($assignment->positionSummary), 0, 50) . '...',
+                    'positionSummary' => mb_convert_encoding(substr(strip_tags($assignment->positionSummary), 0, 250), 'UTF-8') . '...',
                     'sector' => $assignment->sector,
                     'country' => $assignment->country,
                     'publish' => $assignment->publish,
@@ -190,7 +190,9 @@ class AssignmentsController extends Controller
                 'pages' => $this->getPageNumbers($pages),
                 'links' => $this->getLinks($pages)
             ]
-        ]);
+        ];
+
+        return $this->asJson($response);
     }
 
     protected function sortResults(ElementQueryInterface $assignmentElement, $sort=''): ElementQueryInterface
