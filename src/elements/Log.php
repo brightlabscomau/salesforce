@@ -228,12 +228,12 @@ class Log extends Element
 
     protected function cpEditUrl(): ?string
     {
-        return sprintf('logs/%s', $this->getCanonicalId());
+        return sprintf('salesforce/logs/%s', $this->getCanonicalId());
     }
 
     public function getPostEditUrl(): ?string
     {
-        return UrlHelper::cpUrl('logs');
+        return UrlHelper::cpUrl('salesforce/logs');
     }
 
     public function prepareEditScreen(Response $response, string $containerId): void
@@ -242,7 +242,7 @@ class Log extends Element
         $response->crumbs([
             [
                 'label' => self::pluralDisplayName(),
-                'url' => UrlHelper::cpUrl('logs'),
+                'url' => UrlHelper::cpUrl('salesforce/logs'),
             ],
         ]);
     }

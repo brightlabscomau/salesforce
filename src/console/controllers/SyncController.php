@@ -2,6 +2,7 @@
 
 namespace brightlabs\craftsalesforce\console\controllers;
 
+use brightlabs\craftsalesforce\controllers\LogsController;
 use craft\db\Query;
 use yii\console\ExitCode;
 use craft\helpers\Console;
@@ -9,7 +10,10 @@ use craft\console\Controller;
 use brightlabs\craftsalesforce\Salesforce;
 use brightlabs\craftsalesforce\elements\Assignment;
 use brightlabs\craftsalesforce\elements\Log;
+use brightlabs\craftsalesforce\inc\Logs;
 use brightlabs\craftsalesforce\inc\SalesforceQueryBuilder;
+use Craft;
+use yii\db\QueryBuilder;
 
 class SyncController extends Controller
 {
@@ -39,6 +43,7 @@ class SyncController extends Controller
     public function beforeAction($action): bool
     {
 
+        $this->logSuccess();
         $this->salesforceApiVersion = Salesforce::getInstance()->settings->getSalesforceApiVersion();
         $this->salesforceInstanceUrl = Salesforce::getInstance()->settings->getSalesforceInstanceUrl();
         $this->salesforceClientId = Salesforce::getInstance()->settings->getSalesforceClientId();
@@ -446,6 +451,9 @@ class SyncController extends Controller
 
     protected function logSuccess()
     {
+        /** Remove old logs before savings new ones */
+        Logs::prune();
+
         $logString = "";
 
         foreach ($this->logEntries as $entry) {

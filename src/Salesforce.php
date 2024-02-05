@@ -91,7 +91,7 @@ class Salesforce extends Plugin
         });
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES, function (RegisterUrlRulesEvent $event) {
             $event->rules['salesforce/assignments/<assignmentId:\\d+>'] = 'salesforce/assignments/edit';
-            $event->rules['logs/<logId:\\d+>'] = 'salesforce/logs/edit';
+            $event->rules['salesforce/logs/<logId:\\d+>'] = 'salesforce/logs/edit';
         });
 
         Event::on(

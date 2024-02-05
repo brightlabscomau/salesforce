@@ -43,7 +43,6 @@ class LogsController extends Controller
 
     public function actionSave(): ?Response
     {
-
         $logDetails = $this->request->getBodyParam('logDetails');
         $logErrors = $this->request->getBodyParam('logErrors');
 
@@ -74,10 +73,5 @@ class LogsController extends Controller
 
         $this->setSuccessFlash(Craft::t('salesforce', 'Log saved.'));
         return $this->redirectToPostedUrl($log);
-    }
-
-    public function pruneLogs($days=7)
-    {
-
     }
 }
