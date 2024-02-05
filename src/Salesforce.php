@@ -23,6 +23,8 @@ use craft\web\UrlManager;
 use craft\web\twig\variables\Cp;
 use craft\web\twig\variables\CraftVariable;
 use yii\base\Event;
+use craft\services\Gc;
+use craft\db\Table;
 
 /**
  * Salesforce plugin
@@ -142,6 +144,40 @@ class Salesforce extends Plugin
                 $event->sender->attachBehaviors([
                     CraftVariableBehavior::class
                 ]);
+            }
+        );
+
+        Event::on(
+            Gc::class,
+            Gc::EVENT_RUN,
+            function (Event $event) {
+                // Delete `elements` table rows without peers in our custom assignments table
+                Craft::$app->getGc()->deletePartialElements(
+                    Assignment::class,
+                    'salesforce_assignments',
+                    'id'
+                );
+
+                // Delete `elements` table rows without corresponding `content` table rows for the custom element
+                Craft::$app->getGc()->deletePartialElements(
+                    Assignment::class,
+                    Table::CONTENT,
+                    'elementId',
+                );
+
+                // Delete `elements` table rows without peers in our custom logs table
+                Craft::$app->getGc()->deletePartialElements(
+                    Log::class,
+                    'salesforce_logs',
+                    'id'
+                );
+
+                // Delete `elements` table rows without corresponding `content` table rows for the custom element
+                Craft::$app->getGc()->deletePartialElements(
+                    Log::class,
+                    Table::CONTENT,
+                    'elementId',
+                );
             }
         );
     }
