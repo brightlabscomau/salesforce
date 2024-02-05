@@ -42,8 +42,6 @@ class SyncController extends Controller
 
     public function beforeAction($action): bool
     {
-
-        $this->logSuccess();
         $this->salesforceApiVersion = Salesforce::getInstance()->settings->getSalesforceApiVersion();
         $this->salesforceInstanceUrl = Salesforce::getInstance()->settings->getSalesforceInstanceUrl();
         $this->salesforceClientId = Salesforce::getInstance()->settings->getSalesforceClientId();
