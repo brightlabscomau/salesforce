@@ -22,8 +22,8 @@ class AssignmentsController extends Controller
         // return $this->asJson(['ping' => 'pong']);
 
         return $this->renderTemplate(
-            'salesforce/_assignments',
-            ['test' => '123'],
+            'salesforce/assignments/_index',
+            [],
             View::TEMPLATE_MODE_CP
         );
     }

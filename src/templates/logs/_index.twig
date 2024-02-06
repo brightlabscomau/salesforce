@@ -1,5 +1,21 @@
 {% extends '_layouts/elementindex' %}
 {% set title = 'Logs'|t('app') %}
 {% set elementType = 'brightlabs\\craftsalesforce\\elements\\Log' %}
-{% set canHaveDrafts = true %}
+{% set canHaveDrafts = false %}
 {% set selectedSubnavItem = 'logs' %}
+
+{% block initJs %}
+Craft.BaseElementIndex.defaults.batchSize = 20
+
+Craft.elementIndex = Craft.createElementIndex('{{ elementType|e("js") }}', $('#page-container'), {
+    elementTypeName: '{{ elementInstance.displayName()|e("js") }}',
+    elementTypePluralName: '{{ elementInstance.pluralDisplayName()|e("js") }}',
+    context: '{{ context }}',
+    storageKey: 'elementindex.{{ elementType|e("js") }}',
+    criteria: Craft.defaultIndexCriteria,
+    toolbarSelector: '#toolbar',
+    defaultSource: {{ (defaultSource ?? null)|json_encode|raw }},
+    defaultSourcePath: {{ (defaultSourcePath ?? null)|json_encode|raw }},
+    canHaveDrafts: {{ (canHaveDrafts ?? false) ? 'true' : 'false' }},
+});
+{% endblock initJs %}
