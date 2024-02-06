@@ -20,6 +20,18 @@
 
 {% endblock details %}
 
+{% block actionButton %}
+<div class="btngroup">
+  <a
+    href="{{ assignment.url }}"
+    class="btn submit"
+    target="_blank"
+  >
+    {{ 'View Assignment'|t('app') }}
+  </a>
+</div>
+{% endblock actionButton %}
+
 {% block content %}
     {{ actionInput('salesforce/assignments/save') }}
     {{ redirectInput('salesforce/assignments') }}
