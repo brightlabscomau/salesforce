@@ -2,7 +2,6 @@
 
 namespace brightlabs\craftsalesforce\console\controllers;
 
-use brightlabs\craftsalesforce\controllers\LogsController;
 use craft\db\Query;
 use yii\console\ExitCode;
 use craft\helpers\Console;
@@ -84,9 +83,7 @@ class SyncController extends Controller
 
         try {
             $displayToken = substr($jsonResponse->access_token, 0, 7);
-            $this->stdout("Retrieved access token: {$displayToken}... \n", Console::FG_BLUE);
-            $this->logEntries[] = "Retrieved access token: {$displayToken}... \n";
-
+            Logs::log("Retrieved access token: {$displayToken}...", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
         } catch (\Throwable $th) {
 
             $log = new Log();
@@ -124,6 +121,7 @@ class SyncController extends Controller
                 'Sector__c',
                 'Country__r.Name',
                 'PD_Link__c',
+                'Published_Status__c',
                 'LastModifiedDate',
                 '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r)'
             ])
@@ -135,8 +133,7 @@ class SyncController extends Controller
 
         if (!empty($nextQuery) && !$this->done)
         {
-            $this->stdout("Recursion query: {$this->nextRecordsQuery} \n", Console::FG_BLUE);
-            $this->logEntries[] = "Recursion query: {$this->nextRecordsQuery} \n";
+            Logs::log("Recursion query: {$this->nextRecordsQuery}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
 
             $this->getSalesforceToken();
 
@@ -152,17 +149,10 @@ class SyncController extends Controller
             return $this->actionAssignments($this->nextRecordsQuery);
         }
 
-        $this->stdout("Total requests: {$this->totalRequests} \n", Console::FG_GREEN);
-        $this->logEntries[] = "Total requests: {$this->totalRequests} \n";
-
-        $this->stdout("Created/updated records: {$this->updatedRecords} \n", Console::FG_GREEN);
-        $this->logEntries[] = "Created/updated records: {$this->updatedRecords} \n";
-
-        $this->stdout("Deleted records: {$this->deletedRecords} \n", Console::FG_GREEN);
-        $this->logEntries[] = "Deleted records: {$this->deletedRecords} \n";
-
-        $this->stdout("Skipped records: {$this->skippedRecords} \n", Console::FG_GREEN);
-        $this->logEntries[] = "Skipped records: {$this->skippedRecords} \n";
+        Logs::log("Total requests: {$this->totalRequests}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+        Logs::log("Created/updated records: {$this->updatedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+        Logs::log("Deleted records: {$this->deletedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+        Logs::log("Skipped records: {$this->skippedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
         $this->logSuccess();
 
@@ -209,8 +199,7 @@ class SyncController extends Controller
 
             // Skipping items if country is empty
             if (empty($assignment->country)) {
-                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
-                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId} \n";
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                 $this->skippedRecords++;
 
                 if (empty($id)) {
@@ -225,8 +214,7 @@ class SyncController extends Controller
             // Rename country if it has parentheses
             if (stripos($assignment->country, '(') !== false) {
                 $assignment->country = trim(explode('(', $assignment->country)[0]);
-                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId} \n", Console::FG_YELLOW);
-                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId} \n";
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
             }
 
             // Recruitment cycle
@@ -236,8 +224,7 @@ class SyncController extends Controller
 
             // Skipping items if invalid recruitment cycle
             if (empty($assignment->recruitmentStartDate) || empty($assignment->recruitmentEndDate)) {
-                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
-                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId} \n";
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                 $this->skippedRecords++;
 
                 if (empty($id)) {
@@ -254,8 +241,7 @@ class SyncController extends Controller
 
             // Skipping items if invalid publish type
             if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
-                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_PURPLE);
-                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId} \n";
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                 $this->skippedRecords++;
 
                 if (empty($id)) {
@@ -272,19 +258,16 @@ class SyncController extends Controller
             $assignment->jsonContent = json_encode($this->json);
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
-            $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n", Console::FG_GREEN);
-            $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId} \n";
+            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
 
             if (!empty($record->PD_Link__c)) {
-                $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(existing PD_Link__c): {$record->PD_Link__c}\n", Console::FG_BLUE);
-                $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Info(existing PD_Link__c): {$record->PD_Link__c}\n";
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Info(existing PD_Link__c): {$record->PD_Link__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
             }
 
             $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', $assignment->url);
 
-            $this->stdout("({$this->processedRecords}/{$this->totalRecords}) Info(update PD_Link__c): {$assignment->url}\n", Console::FG_BLUE);
-            $this->logEntries[] = "({$this->processedRecords}/{$this->totalRecords}) Info(update PD_Link__c): {$assignment->url}\n";
+            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Info(update PD_Link__c): {$assignment->url}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
 
             $this->updatedRecords++;
         }

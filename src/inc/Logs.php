@@ -4,6 +4,8 @@ namespace brightlabs\craftsalesforce\inc;
 
 use Craft;
 use brightlabs\craftsalesforce\elements\Log;
+use craft\console\Controller;
+use craft\helpers\Console;
 
 class Logs {
     /**
@@ -22,5 +24,26 @@ class Logs {
         foreach ($results as $result) {
             Craft::$app->elements->deleteElement($result);
         }
+    }
+
+    public static function log($message='', &$logEntries, $optionsParam=[])
+    {
+        $options = [
+            'fgColor' => Console::FG_BLACK,
+            'writeToTerminal' => true,
+            'writeToDatabase' => true,
+        ];
+
+        $options = array_replace($options, $optionsParam);
+
+        if ($options['writeToTerminal']) {
+            $controller = new Controller('logs', 'logs');
+            $controller->stdout("{$message} \n", $options['fgColor']);
+        }
+
+        if ($options['writeToDatabase']) {
+            $logEntries[] = $message . " \n";
+        }
+
     }
 }
