@@ -78,6 +78,29 @@ class Log extends Element
         return true;
     }
 
+    public static function statuses(): array
+    {
+        return [
+            'success' => [
+                'label' => Craft::t('salesforce', 'Success'),
+                'color' => 'green'
+            ],
+            'failed' => [
+                'label' => Craft::t('salesforce', 'Failed'),
+                'color' => 'red'
+            ]
+        ];
+    }
+
+    public function getStatus(): ?string
+    {
+        if (empty($this->logErrors)) {
+            return 'success';
+        }
+
+        return 'failed';
+    }
+
     public static function find(): ElementQueryInterface
     {
         return Craft::createObject(LogQuery::class, [static::class]);
@@ -106,7 +129,7 @@ class Log extends Element
 
     protected static function includeSetStatusAction(): bool
     {
-        return true;
+        return false;
     }
 
     protected static function defineSortOptions(): array

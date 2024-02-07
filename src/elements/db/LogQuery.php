@@ -10,6 +10,18 @@ use craft\elements\db\ElementQuery;
  */
 class LogQuery extends ElementQuery
 {
+    protected function statusCondition(string $status): mixed
+    {
+        switch($status) {
+            case 'success':
+                return ['salesforce_logs.logDetails' => null];
+            case  'failed':
+                return ['salesforce_logs.logErrors' => null];
+            default:
+                return parent::statusCondition($status);
+        }
+    }
+
     protected function beforePrepare(): bool
     {
         $this->joinElementTable('salesforce_logs');

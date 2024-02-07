@@ -12,6 +12,7 @@ use brightlabs\craftsalesforce\elements\Log;
 use brightlabs\craftsalesforce\inc\Logs;
 use brightlabs\craftsalesforce\inc\SalesforceQueryBuilder;
 use Craft;
+use DateTime;
 use yii\db\QueryBuilder;
 
 class SyncController extends Controller
@@ -37,10 +38,15 @@ class SyncController extends Controller
     protected $updatedRecords = 0;
     protected $skippedRecords = 0;
     protected $deletedRecords = 0;
+    protected $startTime = null;
+    protected $endTime = null;
+    protected $timeElapsed = 0;
     protected $logEntries = [];
 
     public function beforeAction($action): bool
     {
+        $this->startTime = new DateTime();
+
         $this->salesforceApiVersion = Salesforce::getInstance()->settings->getSalesforceApiVersion();
         $this->salesforceInstanceUrl = Salesforce::getInstance()->settings->getSalesforceInstanceUrl();
         $this->salesforceClientId = Salesforce::getInstance()->settings->getSalesforceClientId();
@@ -149,10 +155,15 @@ class SyncController extends Controller
             return $this->actionAssignments($this->nextRecordsQuery);
         }
 
+        $this->endTime = new DateTime();
+        $this->timeElapsed = $this->endTime->diff($this->startTime);
+
         Logs::log("Total requests: {$this->totalRequests}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
         Logs::log("Created/updated records: {$this->updatedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
         Logs::log("Deleted records: {$this->deletedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
         Logs::log("Skipped records: {$this->skippedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+        Logs::log("Skipped records: {$this->skippedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+        Logs::log("Time taken: {$this->timeElapsed->format('%Hh %Im %Ss')}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
         $this->logSuccess();
 
@@ -207,6 +218,7 @@ class SyncController extends Controller
                 }
 
                 Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                $this->unpublishAssignmentOnSalesforce($assignment);
                 $this->deletedRecords++;
                 continue;
             }
@@ -232,6 +244,7 @@ class SyncController extends Controller
                 }
 
                 Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                $this->unpublishAssignmentOnSalesforce($assignment);
                 $this->deletedRecords++;
                 continue;
             }
@@ -249,6 +262,7 @@ class SyncController extends Controller
                 }
 
                 Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                $this->unpublishAssignmentOnSalesforce($assignment);
                 $this->deletedRecords++;
                 continue;
             }
@@ -260,19 +274,36 @@ class SyncController extends Controller
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
             Logs::log("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
-
             if (!empty($record->PD_Link__c)) {
-                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Info(existing PD_Link__c): {$record->PD_Link__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(PD_Link__c): {$record->PD_Link__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
             }
 
-            $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', $assignment->url);
+            if (!empty($record->Published_Status__c)) {
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(Published_Status__c): {$record->Published_Status__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+            }
 
-            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Info(update PD_Link__c): {$assignment->url}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+            $this->publishAssignmentOnSalesforce($assignment);
 
             $this->updatedRecords++;
         }
 
+    }
 
+    protected function publishAssignmentOnSalesforce(Assignment $assignment)
+    {
+        $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', $assignment->url);
+        $this->setField('Position__c', $assignment->salesforceId, 'Published_Status__c', 'Published');
+
+        Logs::log("({$this->processedRecords}/{$this->totalRecords}) Published: {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_GREY]);
+        Logs::log("({$this->processedRecords}/{$this->totalRecords}) Updated(PD_Link__c): {$assignment->url}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+        Logs::log("({$this->processedRecords}/{$this->totalRecords}) Updated(Published_Status__c): Published", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+    }
+
+    protected function unpublishAssignmentOnSalesforce(Assignment $assignment)
+    {
+        $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', '');
+        $this->setField('Position__c', $assignment->salesforceId, 'Published_Status__c', 'Unpublished');
+        Logs::log("({$this->processedRecords}/{$this->totalRecords}) Unpublished: {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_GREY]);
     }
 
     protected function getRecruitmentCycle($recruitmentObj): ?object
