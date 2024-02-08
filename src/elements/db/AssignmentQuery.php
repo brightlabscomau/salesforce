@@ -13,7 +13,15 @@ class AssignmentQuery extends ElementQuery
 {
     public $salesforceId;
     public $country;
+    public $sector;
+    public $hybridVolunteeringNature;
 
+    public function salesforceId($value): self
+    {
+        $this->salesforceId = $value;
+
+        return $this;
+    }
 
     public function country($value): self
     {
@@ -22,9 +30,16 @@ class AssignmentQuery extends ElementQuery
         return $this;
     }
 
-    public function salesforceId($value): self
+    public function sector($value): self
     {
-        $this->salesforceId = $value;
+        $this->sector = $value;
+
+        return $this;
+    }
+
+    public function volunteeringNature($value): self
+    {
+        $this->hybridVolunteeringNature = $value;
 
         return $this;
     }
@@ -146,7 +161,15 @@ class AssignmentQuery extends ElementQuery
         }
 
         if ($this->country) {
-            $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.country', $this->country));
+            $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.country', $this->country))->andWhere(['salesforce_assignments.publish' => 'AVP Portal (Public)']);
+        }
+
+        if ($this->sector) {
+            $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.sector', $this->sector))->andWhere(['salesforce_assignments.publish' => 'AVP Portal (Public)']);
+        }
+
+        if ($this->hybridVolunteeringNature) {
+            $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.hybridVolunteeringNature', $this->hybridVolunteeringNature))->andWhere(['salesforce_assignments.publish' => 'AVP Portal (Public)']);
         }
 
         return parent::beforePrepare();
