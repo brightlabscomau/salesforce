@@ -165,6 +165,13 @@ class AssignmentsController extends Controller
             'sectors' => $sectors,
             'countries' => $countries,
             'assignments' => array_map(function($assignment) {
+
+                $applicationCloseDate = '';
+                if (!empty($assignment->applicationCloseDate)) {
+                    $applicationCloseDate = date_create_from_format('Y-m-d', $assignment->applicationCloseDate)->format('d-m-Y');
+                }
+
+
                 return (object) [
                     'salesforceId' => $assignment->salesforceId,
                     'title' => $assignment->title,
@@ -173,7 +180,7 @@ class AssignmentsController extends Controller
                     'duration' => $assignment->duration,
                     'startDate' => $assignment->startDate,
                     'positionDescriptionUrl' => $assignment->positionDescriptionUrl,
-                    'applicationCloseDate' => $assignment->applicationCloseDate,
+                    'applicationCloseDate' => $applicationCloseDate,
                     'positionSummary' => mb_convert_encoding(substr(strip_tags($assignment->positionSummary), 0, 250), 'UTF-8') . '...',
                     'sector' => $assignment->sector,
                     'country' => $assignment->country,
