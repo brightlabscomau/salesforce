@@ -234,7 +234,7 @@ class SyncController extends Controller
                 Logs::log("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
             }
 
-            $assignment->slug = ElementHelper::generateSlug($record->Name . ' ' . $assignment->country . ' ' . substr(str_shuffle("1234567890"), 0, 6));
+            $assignment->slug = ElementHelper::generateSlug($record->Name . ' ' . $assignment->country . ' ' . rand(100000, 999999));
 
             // Recruitment cycle
             $recruitmentCycle = $this->getRecruitmentCycle($record->Recruitment__r);
