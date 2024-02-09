@@ -408,7 +408,12 @@ class SyncController extends Controller
 
             $log = new Log();
             $log->title = date('jS M Y g:i:s a');
-            $log->logErrors = $th->getMessage();
+            $log->logErrors = json_encode(
+                (object) [
+                    'phpError' => $th->getMessage(),
+                    'salesforceError' => $jsonResponse
+                ]
+            );
             Salesforce::getInstance()->log->saveLog($log);
 
             $error = $jsonResponse[0] ?? (object)['errorCode' => 'MISSING_CREDENTIALS'];
