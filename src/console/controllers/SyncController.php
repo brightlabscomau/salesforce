@@ -94,10 +94,15 @@ class SyncController extends Controller
 
             $log = new Log();
             $log->title = date('jS M Y g:i:s a');
-            $log->logErrors = $th->getMessage();
+            $log->logErrors = json_encode(
+                (object) [
+                    'phpError' => $th->getMessage(),
+                    'salesforceResponse' => $jsonResponse,
+                ]
+            );
             Salesforce::getInstance()->log->saveLog($log);
 
-            dd('Missing plugin configuration');
+            dd('Missing plugin configuration or invalid credentials.');
         }
 
 

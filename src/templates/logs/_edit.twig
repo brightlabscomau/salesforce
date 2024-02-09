@@ -5,7 +5,7 @@
 
 {% set selectedSubnavItem = 'logs' %}
 
-{% set tabs = {
+{# {% set tabs = {
   general: {
     label: 'Details'|t('salesforce'),
     url: '#one',
@@ -14,13 +14,17 @@
     label: 'Errors'|t('salesforce'),
     url: '#two'
   }
-} %}
+} %} #}
 
 {% block content %}
     {{ actionInput('salesforce/logs/save') }}
     {{ redirectInput('salesforce/logs') }}
 
-    <div id="one">
+    <div id="one" class="
+    {% if log.logDetails == '' %}
+      hidden
+    {% endif %}
+    ">
 
         {{ forms.textareaField({
             label: 'Details'|t('salesforce'),
@@ -34,7 +38,11 @@
           })
         }}
     </div>
-    <div id="two" class="hidden">
+    <div id="two" class="
+      {% if log.logDetails != '' %}
+        hidden
+      {% endif %}
+    ">
         {{ forms.textareaField({
             label: 'Errors'|t('salesforce'),
             id: 'logErrors',
