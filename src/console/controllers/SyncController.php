@@ -14,6 +14,7 @@ use brightlabs\craftsalesforce\inc\SalesforceQueryBuilder;
 use Craft;
 use DateTime;
 use yii\db\QueryBuilder;
+use craft\helpers\ElementHelper;
 
 class SyncController extends Controller
 {
@@ -167,7 +168,6 @@ class SyncController extends Controller
         Logs::log("Created/updated records: {$this->updatedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
         Logs::log("Deleted records: {$this->deletedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
         Logs::log("Skipped records: {$this->skippedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
-        Logs::log("Skipped records: {$this->skippedRecords}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
         Logs::log("Time taken: {$this->timeElapsed->format('%Hh %Im %Ss')}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
         $this->logSuccess();
@@ -233,6 +233,8 @@ class SyncController extends Controller
                 $assignment->country = trim(explode('(', $assignment->country)[0]);
                 Logs::log("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
             }
+
+            $assignment->slug = ElementHelper::generateSlug($record->Name . ' ' . $assignment->country . ' ' . substr(str_shuffle("abcdefghijklmnopqrtuvywxz"), 0, 3));
 
             // Recruitment cycle
             $recruitmentCycle = $this->getRecruitmentCycle($record->Recruitment__r);
