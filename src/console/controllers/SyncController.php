@@ -411,7 +411,8 @@ class SyncController extends Controller
             $log->logErrors = json_encode(
                 (object) [
                     'phpError' => $th->getMessage(),
-                    'salesforceError' => $jsonResponse
+                    'salesforceError' => $jsonResponse,
+                    'salesforceQuery' => $textQuery
                 ]
             );
             Salesforce::getInstance()->log->saveLog($log);
