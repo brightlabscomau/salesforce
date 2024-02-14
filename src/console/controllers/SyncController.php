@@ -479,7 +479,7 @@ class SyncController extends Controller
     protected function logSuccess()
     {
         /** Remove old logs before savings new ones */
-        Logs::prune();
+        Logs::prune(1);
 
         $logString = "";
 
