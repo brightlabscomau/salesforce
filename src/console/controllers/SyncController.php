@@ -300,6 +300,10 @@ class SyncController extends Controller
 
     protected function publishAssignmentOnSalesforce(Assignment $assignment)
     {
+        if (Craft::$app->env == 'dev') {
+            return;
+        }
+
         $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', $assignment->url);
         $this->setField('Position__c', $assignment->salesforceId, 'Published_Status__c', 'Published');
 
@@ -310,6 +314,10 @@ class SyncController extends Controller
 
     protected function unpublishAssignmentOnSalesforce(Assignment $assignment)
     {
+        if (Craft::$app->env == 'dev') {
+            return;
+        }
+
         $this->setField('Position__c', $assignment->salesforceId, 'PD_Link__c', '');
         $this->setField('Position__c', $assignment->salesforceId, 'Published_Status__c', 'Unpublished');
         Logs::log("({$this->processedRecords}/{$this->totalRecords}) Unpublished: {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_GREY]);
