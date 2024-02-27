@@ -32,7 +32,7 @@ class AssignmentQuery extends ElementQuery
 
     public function sector($value): self
     {
-        $this->sector = $value;
+        $this->sector = str_replace(',', '\,', $value);
 
         return $this;
     }
