@@ -133,15 +133,15 @@ class AssignmentsController extends Controller
         }
 
         if (!empty($types)) {
-            $assignmentElement->filterByTypes(explode(',', $types));
+            $assignmentElement->filterByTypes(explode(';', $types));
         }
 
         if (!empty($sectors)) {
-            $assignmentElement->filterBySectors(explode(',', $sectors));
+            $assignmentElement->filterBySectors(explode(';', $sectors));
         }
 
         if (!empty($countries)) {
-            $assignmentElement->filterByCountries(explode(',', $countries));
+            $assignmentElement->filterByCountries(explode(';', $countries));
         }
 
         $assignmentElement = $this->sortResults($assignmentElement, $sort);
