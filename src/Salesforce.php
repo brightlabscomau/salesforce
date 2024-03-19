@@ -5,12 +5,14 @@ namespace brightlabs\craftsalesforce;
 use Craft;
 use brightlabs\craftsalesforce\elements\Assignment;
 use brightlabs\craftsalesforce\elements\Log;
+use brightlabs\craftsalesforce\fields\AssignmentSectors;
 use brightlabs\craftsalesforce\models\Settings;
 use brightlabs\craftsalesforce\services\Assignment as AssignmentService;
 use brightlabs\craftsalesforce\services\Log as LogService;
 use brightlabs\craftsalesforce\variables\CraftVariableBehavior;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\db\Table;
 use craft\events\DefineBehaviorsEvent;
 use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\RegisterComponentTypesEvent;
@@ -19,12 +21,12 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\helpers\UrlHelper;
 use craft\models\FieldLayout;
 use craft\services\Elements;
+use craft\services\Fields;
+use craft\services\Gc;
 use craft\web\UrlManager;
 use craft\web\twig\variables\Cp;
 use craft\web\twig\variables\CraftVariable;
 use yii\base\Event;
-use craft\services\Gc;
-use craft\db\Table;
 
 /**
  * Salesforce plugin
@@ -180,5 +182,8 @@ class Salesforce extends Plugin
                 );
             }
         );
+        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES, function (RegisterComponentTypesEvent $event) {
+            $event->types[] = AssignmentSectors::class;
+        });
     }
 }
