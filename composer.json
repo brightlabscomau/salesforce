@@ -12,6 +12,7 @@
     },
     "require": {
         "php": ">=8.0.2",
+        "algolia/algoliasearch-client-php": "^3.4",
         "craftcms/cms": "^4.5.0",
         "nesbot/carbon": "^2.72"
     },
