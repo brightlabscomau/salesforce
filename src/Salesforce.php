@@ -5,7 +5,7 @@ namespace brightlabs\craftsalesforce;
 use Craft;
 use brightlabs\craftsalesforce\elements\Assignment;
 use brightlabs\craftsalesforce\elements\Log;
-use brightlabs\craftsalesforce\fields\AssignmentSectors;
+use brightlabs\craftsalesforce\fields\Assignments;
 use brightlabs\craftsalesforce\models\Settings;
 use brightlabs\craftsalesforce\services\Assignment as AssignmentService;
 use brightlabs\craftsalesforce\services\Log as LogService;
@@ -182,8 +182,12 @@ class Salesforce extends Plugin
                 );
             }
         );
-        Event::on(Fields::class, Fields::EVENT_REGISTER_FIELD_TYPES, function (RegisterComponentTypesEvent $event) {
-            $event->types[] = AssignmentSectors::class;
-        });
+        Event::on(
+            Fields::class,
+            Fields::EVENT_REGISTER_FIELD_TYPES,
+            function (RegisterComponentTypesEvent $event) {
+                $event->types[] = Assignments::class;
+             }
+        );
     }
 }
