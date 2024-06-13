@@ -30,6 +30,13 @@ class AssignmentQuery extends ElementQuery
         return $this;
     }
 
+    public function orCountry($value): self
+    {
+        $this->orWhere(['country' => $value]);
+
+        return $this;
+    }
+
     public function sector($value): self
     {
         $this->sector = str_replace(',', '\,', $value);
@@ -37,9 +44,23 @@ class AssignmentQuery extends ElementQuery
         return $this;
     }
 
+    public function orSector($value):self
+    {
+        $this->orWhere(['sector' => $value]);
+
+        return $this;
+    }
+
     public function volunteeringNature($value): self
     {
         $this->hybridVolunteeringNature = $value;
+
+        return $this;
+    }
+
+    public function orVolunteeringNature($value): self
+    {
+        $this->orWhere(['hybridVolunteeringNature' => $value]);
 
         return $this;
     }
