@@ -80,13 +80,12 @@
         {% set stories =  craft.entries.id(assignment.filterStories | split(',') ).all %}
     {% endif %}
 
-
     {{ forms.elementSelectField({
         label: 'Stories',
         id: 'stories',
         name: 'stories',
         elementType: 'craft\\elements\\Entry',
-        source: 'section:40c77d3f-da60-4a86-bd18-5fe9d45a47b2',
+        sources: ["section:40c77d3f-da60-4a86-bd18-5fe9d45a47b2"],
         elements: stories
     })}}
 
