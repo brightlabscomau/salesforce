@@ -25,6 +25,10 @@ class Assignment extends Model
     public $recruitmentStartDate = null;
     public $recruitmentEndDate = null;
     public $jsonContent = null;
+    public $filterCountry = null;
+    public $filterSector = null;
+    public $filterTheme = null;
+    public $filterStories = null;
 
     protected function defineRules(): array
     {
@@ -48,6 +52,10 @@ class Assignment extends Model
                     'recruitmentStartDate',
                     'recruitmentEndDate',
                     'jsonContent',
+                    'filterCountry',
+                    'filterSector',
+                    'filterTheme',
+                    'filterStories'
                 ],
                 'required'
             ]

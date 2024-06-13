@@ -46,6 +46,10 @@ class Install extends Migration
             'recruitmentEndDate' => $this->dateTime()->null(),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),
+            'filterStories' => $this->mediumText()->null(),
+            'filterCountry' => $this->char(255)->null(),
+            'filterSector' => $this->char(255)->null(),
+            'filterTheme' => $this->char(255)->null(),
             'uid' => $this->uid(),
         ]);
 

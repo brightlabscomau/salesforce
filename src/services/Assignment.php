@@ -22,12 +22,12 @@ class Assignment extends Component
     {
 
         if ($assignment->publish == 'AVP Portal (Public)' && !empty(App::env('ALGOLIA_APPLICATION_ID'))) {
-            Craft::$app->elements->saveElement($assignment, true);
+            $result = Craft::$app->elements->saveElement($assignment, true);
             $assignmentUri = $this->getAssignmentById($assignment->id)->uri;
             $assignment->uri = $assignmentUri;
 
             $this->createOnAlgolia($assignment);
-            return;
+            return $result;
         }
 
         return Craft::$app->elements->saveElement($assignment, true);

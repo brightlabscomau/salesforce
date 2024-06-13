@@ -1,6 +1,7 @@
 {% extends '_layouts/cp.twig' %}
 {% import '_includes/forms.twig' as forms %}
 
+  {# {% set fullPageForm = true %} #}
 {% set title = 'View Assignment'|t('salesforce') %}
 
 {% set selectedSubnavItem = 'assignments' %}
@@ -13,6 +14,10 @@
   json: {
     label: 'JSON'|t('salesforce'),
     url: '#json'
+  },
+  related: {
+    label: 'Related Stories'|t('salesforce'),
+    url: '#related'
   }
 } %}
 
@@ -40,5 +45,6 @@
 
     {% include "salesforce/assignments/_general-tab" %}
     {% include "salesforce/assignments/_json-tab" %}
+    {% include "salesforce/assignments/_related-stories-tab" %}
 
 {% endblock content %}

@@ -1,0 +1,109 @@
+{% import '_includes/forms.twig' as forms %}
+
+<div id="related" class="hidden">
+    <form method="post">
+    {{ csrfInput() }}
+    {{ actionInput('salesforce/assignments/save-filters') }}
+
+    <h2>Automatic Story Fetch</h2>
+
+    {{ forms.hidden({
+        name: 'assignmentId',
+        value: assignment.id,
+        required: true,
+        errors: assignment.getErrors('assignmentId'),
+    }) }}
+
+    {% set countryOptions = [{
+        'label': 'None',
+        'value': ''
+    },
+    {
+        'label': 'All Countries',
+        'value': 'all'
+    }] %}
+
+    {{ forms.selectField({
+        label: 'Story Country'|t('salesforce'),
+        id: 'country',
+        name: 'country',
+        value: assignment.filterCountry,
+        options: countryOptions | merge(
+            craft.categories.group('countries')|map(item => {
+                value:item,
+                label: item
+            })
+        )
+    }) }}
+
+    {% set sectorOptions = [{
+        'label': 'None',
+        'value': ''
+    },
+    {
+        'label': 'All Sectors',
+        'value': 'all'
+    }] %}
+
+    {{ forms.selectField({
+        label: 'Stroy Sector'|t('salesforce'),
+        id: 'sector',
+        name: 'sector',
+        value: assignment.filterSector,
+        options: sectorOptions | merge(
+            craft.categories.group('sectors')|map(item => {
+                value:item,
+                label: item
+            })
+        )
+    }) }}
+
+    {% set themeOptions = [{
+        'label': 'None',
+        'value': ''
+    },
+    {
+        'label': 'All Themes',
+        'value': 'all'
+    },] %}
+
+    {{ forms.selectField({
+        label: 'Story Theme'|t('salesforce'),
+        id: 'theme',
+        name: 'theme',
+        value: assignment.filterTheme,
+        options: themeOptions | merge(
+            craft.categories.group('themes')|map(item => {
+                value:item,
+                label: item
+            })
+        )
+    }) }}
+
+    <hr>
+
+    <h2>Manual Story Fetch</h2>
+
+    <small>Manually selecting stories will ignore above filters.</small> <br>
+
+    {% if assignment.filterStories is empty %}
+        {% set stories =  [] %}
+    {% else %}
+        {% set stories =  craft.entries.id(assignment.filterStories | split(',') ).all %}
+    {% endif %}
+
+
+    {{ forms.elementSelectField({
+        label: 'Stories',
+        id: 'stories',
+        name: 'stories',
+        elementType: 'craft\\elements\\Entry',
+        source: 'section:40c77d3f-da60-4a86-bd18-5fe9d45a47b2',
+        elements: stories
+    })}}
+
+    {{ forms.submitButton({
+        label: 'Save'
+    }) }}
+    </form>
+</div>

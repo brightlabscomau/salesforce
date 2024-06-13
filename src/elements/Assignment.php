@@ -38,6 +38,10 @@ class Assignment extends Element
     public ?string $recruitmentStartDate = null;
     public ?string $recruitmentEndDate = null;
     public ?string $jsonContent = null;
+    public ?string $filterCountry = null;
+    public ?string $filterSector = null;
+    public ?string $filterTheme = null;
+    public ?string $filterStories = null;
 
     public static function displayName(): string
     {
@@ -312,6 +316,10 @@ class Assignment extends Element
             'recruitmentStartDate' => $this->recruitmentStartDate,
             'recruitmentEndDate' => $this->recruitmentEndDate,
             'jsonContent' => $this->jsonContent,
+            'filterCountry' => $this->filterCountry,
+            'filterSector' => $this->filterSector,
+            'filterTheme' => $this->filterTheme,
+            'filterStories' => $this->filterStories,
         ]);
 
         if (!$this->propagating) {
@@ -335,6 +343,10 @@ class Assignment extends Element
                 'recruitmentStartDate' => $this->recruitmentStartDate,
                 'recruitmentEndDate' => $this->recruitmentEndDate,
                 'jsonContent' => $this->jsonContent,
+                'filterCountry' => $this->filterCountry,
+                'filterSector' => $this->filterSector,
+                'filterTheme' => $this->filterTheme,
+                'filterStories' => $this->filterStories,
             ]);
         }
 

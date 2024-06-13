@@ -49,6 +49,49 @@ class AssignmentsController extends Controller
         ]);
     }
 
+    public function actionSaveFilters(): ?Response
+    {
+
+        $assignmentId = $this->request->getBodyParam('assignmentId');
+        $country = $this->request->getBodyParam('country');
+        $sector = $this->request->getBodyParam('sector');
+        $theme = $this->request->getBodyParam('theme');
+        $stories = $this->request->getBodyParam('stories');
+
+        $assignment = Salesforce::getInstance()->assignment->getAssignmentById($assignmentId);
+        $assignment->filterCountry = $country;
+        $assignment->filterSector = $sector;
+        $assignment->filterTheme = $theme;
+
+        if (!empty($stories)) {
+            $assignment->filterStories = implode(',', $stories);
+        } else {
+            $assignment->filterStories = '';
+        }
+
+
+        if (!Salesforce::getInstance()->assignment->saveAssignment($assignment)) {
+            if ($this->request->acceptsJson) {
+                return $this->asJson(['errors' => $assignment->getErrors()]);
+            }
+
+            $this->setFailFlash(Craft::t('salesforce', 'Couldn\'t save assignment.'));
+
+            Craft::$app->urlManager->setRouteParams([
+                'assignment' => $assignment
+            ]);
+
+            return null;
+        }
+
+        if ($this->request->acceptsJson) {
+            return $this->asJson(['success' => true]);
+        }
+
+        $this->setSuccessFlash(Craft::t('salesforce', 'Assignment saved.'));
+        return $this->redirectToPostedUrl();
+    }
+
     public  function actionSave(): ?Response
     {
         $assignmentId = $this->request->getBodyParam('assignmentId');

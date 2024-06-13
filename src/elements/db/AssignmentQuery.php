@@ -153,6 +153,10 @@ class AssignmentQuery extends ElementQuery
             'salesforce_assignments.recruitmentStartDate',
             'salesforce_assignments.recruitmentEndDate',
             'salesforce_assignments.jsonContent',
+            'salesforce_assignments.filterCountry',
+            'salesforce_assignments.filterSector',
+            'salesforce_assignments.filterTheme',
+            'salesforce_assignments.filterStories',
         ]);
 
         // todo: apply any custom query params
