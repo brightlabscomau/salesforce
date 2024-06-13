@@ -17,10 +17,6 @@
     {% set countryOptions = [{
         'label': 'None',
         'value': ''
-    },
-    {
-        'label': 'All Countries',
-        'value': 'all'
     }] %}
 
     {{ forms.selectField({
@@ -39,10 +35,6 @@
     {% set sectorOptions = [{
         'label': 'None',
         'value': ''
-    },
-    {
-        'label': 'All Sectors',
-        'value': 'all'
     }] %}
 
     {{ forms.selectField({
@@ -61,11 +53,7 @@
     {% set themeOptions = [{
         'label': 'None',
         'value': ''
-    },
-    {
-        'label': 'All Themes',
-        'value': 'all'
-    },] %}
+    }] %}
 
     {{ forms.selectField({
         label: 'Story Theme'|t('salesforce'),
