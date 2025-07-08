@@ -479,7 +479,29 @@ class SyncController extends Controller
 
         $response = curl_exec($curl);
 
+        // Check for cURL errors
+        if (curl_errno($curl)) {
+            $error = curl_error($curl);
+            $errorCode = curl_errno($curl);
+            curl_close($curl);
+
+            // Log the error
+            Logs::log("cURL Error ({$errorCode}): {$error}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+            return false;
+        }
+
+        // Get HTTP status code
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
+
+        // Check for HTTP errors
+        if ($httpCode >= 400) {
+            Logs::log("HTTP Error ({$httpCode}): {$response}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+            return false;
+        }
+
+        // Log success response for debugging
+        Logs::log("Salesforce field update response: {$response}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
         return true;
     }
