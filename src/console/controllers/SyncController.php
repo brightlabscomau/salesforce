@@ -245,26 +245,14 @@ class SyncController extends Controller
             $assignment->recruitmentStartDate = $recruitmentCycle->start;
             $assignment->recruitmentEndDate = $recruitmentCycle->end;
 
-            // Skipping items if invalid recruitment cycle
-            if (empty($assignment->recruitmentStartDate) || empty($assignment->recruitmentEndDate)) {
-                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Invalid recruitment cycle): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
-                $this->skippedRecords++;
-
-                if (empty($id)) {
-                    continue;
-                }
-
-                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
-                $this->unpublishAssignmentOnSalesforce($assignment);
-                $this->deletedRecords++;
-                continue;
-            }
-
-            // Publish status
-            $assignment->publish = (string) $recruitmentCycle->publish;
+            // Set empty publish status to `Draft`
+            $assignment->publish = empty((string) $recruitmentCycle->publish)
+                ? 'Draft'
+                : (string) $recruitmentCycle->publish;
 
             // Skipping items if invalid publish type
-            if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
+            if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)', 'Draft'])) {
+                Logs::log("Publish status: {$assignment->publish}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                 Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                 $this->skippedRecords++;
 
@@ -293,7 +281,13 @@ class SyncController extends Controller
                 Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(Published_Status__c): {$record->Published_Status__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
             }
 
-            $this->publishAssignmentOnSalesforce($assignment);
+
+            if ($assignment->publish === 'Draft') {
+                $this->unpublishAssignmentOnSalesforce($assignment);
+            } else {
+                $this->publishAssignmentOnSalesforce($assignment);
+            }
+
 
             $this->updatedRecords++;
         }
