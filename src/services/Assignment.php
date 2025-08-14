@@ -21,16 +21,29 @@ class Assignment extends Component
     public function saveAssignment(ElementsAssignment $assignment)
     {
 
-        if ($assignment->publish == 'AVP Portal (Public)' && !empty(App::env('ALGOLIA_APPLICATION_ID'))) {
-            $result = Craft::$app->elements->saveElement($assignment, true);
-            $assignmentUri = $this->getAssignmentById($assignment->id)->uri;
-            $assignment->uri = $assignmentUri;
+        $result = Craft::$app->elements->saveElement($assignment, true);
+        $assignmentUri = $this->getAssignmentById($assignment->id)->uri;
+        $assignment->uri = $assignmentUri;
 
-            $this->createOnAlgolia($assignment);
-            return $result;
+        if (!empty(App::env('ALGOLIA_APPLICATION_ID'))) {
+
+            switch ($assignment->publish) {
+                case 'AVP Portal (Public)':
+                    $this->createOnAlgolia($assignment);
+                    break;
+
+                case 'Draft':
+                    $this->deleteOnAlgolia($assignment);
+                    break;
+
+                default:
+                    $this->deleteOnAlgolia($assignment);
+                    break;
+            }
+
         }
 
-        return Craft::$app->elements->saveElement($assignment, true);
+        return $result;
     }
 
     public function deleteAssignment(ElementsAssignment $assignment)
