@@ -12,6 +12,7 @@ use craft\helpers\Db;
 class AssignmentQuery extends ElementQuery
 {
     public $salesforceId;
+    public $positionId;
     public $country;
     public $sector;
     public $hybridVolunteeringNature;
@@ -19,6 +20,13 @@ class AssignmentQuery extends ElementQuery
     public function salesforceId($value): self
     {
         $this->salesforceId = $value;
+
+        return $this;
+    }
+
+    public function positionId($value): self
+    {
+        $this->positionId = $value;
 
         return $this;
     }
@@ -158,6 +166,7 @@ class AssignmentQuery extends ElementQuery
 
         $this->query->select([
             'salesforce_assignments.salesforceId',
+            'salesforce_assignments.positionId',
             'salesforce_assignments.hybridVolunteeringNature',
             'salesforce_assignments.workplace',
             'salesforce_assignments.duration',
@@ -183,6 +192,10 @@ class AssignmentQuery extends ElementQuery
         // todo: apply any custom query params
         if ($this->salesforceId) {
             $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.salesforceId', $this->salesforceId));
+        }
+
+        if ($this->positionId) {
+            $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.positionId', $this->positionId));
         }
 
         if ($this->country) {

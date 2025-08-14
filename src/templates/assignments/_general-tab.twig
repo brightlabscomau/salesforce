@@ -19,6 +19,16 @@
       }) }}
 
       {{ forms.textField({
+        label: 'Position Id'|t('salesforce'),
+        id: 'positionId',
+        name: 'positionId',
+        value: assignment.positionId,
+        required: true,
+        errors: assignment.getErrors('positionId'),
+        readonly: true,
+      }) }}
+
+      {{ forms.textField({
         label: 'Title'|t('salesforce'),
         id: 'title',
         name: 'title',

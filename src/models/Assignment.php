@@ -37,6 +37,7 @@ class Assignment extends Model
                 [
                     'title',
                     'salesforceId',
+                    'positionId',
                     'hybridVolunteeringNature',
                     'workplace',
                     'duration',
