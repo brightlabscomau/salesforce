@@ -188,7 +188,7 @@ class SyncController extends Controller
             $id = (new Query())
             ->select(['id'])
             ->from(['salesforce_assignments'])
-            ->where(['salesforceId' => $record->Id])
+            ->where(['positionId' => $record->Position_ID__c])
             ->scalar();
 
             if (!empty($id)) {
@@ -283,7 +283,7 @@ class SyncController extends Controller
             $assignment->jsonContent = json_encode($this->json);
 
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
-            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId}:{$assignment->positionId}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
             if (!empty($record->PD_Link__c)) {
                 Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(PD_Link__c): {$record->PD_Link__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
