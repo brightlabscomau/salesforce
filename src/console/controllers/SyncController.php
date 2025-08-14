@@ -135,6 +135,7 @@ class SyncController extends Controller
                 'PD_Link__c',
                 'Published_Status__c',
                 'LastModifiedDate',
+                'Position_ID__c',
                 '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r)'
             ])
             ->from('Position__c');
@@ -198,6 +199,7 @@ class SyncController extends Controller
 
             $assignment->title = $record->Name;
             $assignment->salesforceId = (string) $record->Id;
+            $assignment->positionId = (string) $record->Position_ID__c;
             $assignment->hybridVolunteeringNature = (string) $record->Hybrid_Volunteering_Nature__c;
             $assignment->workplace = (string) $record->Workplace__c;
             $assignment->duration = (string) $record->Duration__c;

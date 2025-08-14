@@ -22,6 +22,7 @@ class Assignment extends Element
 {
     public string $handle = 'assignment';
     public ?string $salesforceId = null;
+    public ?string $positionId = null;
     public ?string $hybridVolunteeringNature = null;
     public ?string $workplace = null;
     public ?string $duration = null;
@@ -300,6 +301,7 @@ class Assignment extends Element
             'id' => $this->id,
         ], [
             'salesforceId' => $this->salesforceId,
+            'positionId' => $this->positionId,
             'hybridVolunteeringNature' => $this->hybridVolunteeringNature,
             'workplace' => $this->workplace,
             'duration' => $this->duration,
@@ -327,6 +329,7 @@ class Assignment extends Element
                 'id' => $this->id,
             ], [
                 'salesforceId' => $this->salesforceId,
+                'positionId' => $this->positionId,
                 'hybridVolunteeringNature' => $this->hybridVolunteeringNature,
                 'workplace' => $this->workplace,
                 'duration' => $this->duration,

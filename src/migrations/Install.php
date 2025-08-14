@@ -28,6 +28,7 @@ class Install extends Migration
         $this->createTable($this->table, [
             'id' => $this->primaryKey(),
             'salesforceId' => $this->char(100)->notNull(),
+            'positionId' => $this->char(100)->notNull(),
             'hybridVolunteeringNature' => $this->char(255)->null(),
             'workplace' => $this->char(255)->null(),
             'duration' => $this->integer()->null(),
