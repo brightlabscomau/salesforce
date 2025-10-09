@@ -90,6 +90,10 @@ class SyncController extends Controller
 
         try {
             $displayToken = substr($jsonResponse->access_token, 0, 7);
+            if (empty($displayToken)) {
+                $jsonError = json_encode($jsonResponse);
+                Logs::log("Missing access token: {$jsonError}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+            }
             Logs::log("Retrieved access token: {$displayToken}...", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
         } catch (\Throwable $th) {
 
