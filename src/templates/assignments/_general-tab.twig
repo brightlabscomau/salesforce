@@ -144,12 +144,12 @@
       }) }}
 
       {{ forms.textField({
-        label: 'Sector'|t('salesforce'),
-        id: 'sector',
-        name: 'sector',
-        value: assignment.sector,
+        label: 'Sectors'|t('salesforce'),
+        id: 'sectors',
+        name: 'sectors',
+        value: assignment.getSectorString,
         required: true,
-        errors: assignment.getErrors('sector'),
+        errors: assignment.getErrors('sectors'),
         readonly: true,
       }) }}
 
