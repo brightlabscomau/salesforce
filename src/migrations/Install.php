@@ -4,6 +4,8 @@ namespace brightlabs\craftsalesforce\migrations;
 
 use Craft;
 use craft\db\Migration;
+use craft\models\CategoryGroup;
+use craft\fields\Categories as CategoriesField;
 
 /**
  * Install migration.
@@ -83,6 +85,49 @@ class Install extends Migration
             'CASCADE',
             null
         );
+
+        // Get or create sectors category group
+        $sectorsGroup = Craft::$app->getCategories()->getGroupByHandle('sectors');
+
+        if (!$sectorsGroup) {
+            $sectorsGroup = new CategoryGroup();
+            $sectorsGroup->name = 'Sectors';
+            $sectorsGroup->handle = 'sectors';
+
+            // Create site settings for the group
+            $allSites = Craft::$app->getSites()->getAllSites();
+            $siteSettings = [];
+
+            foreach ($allSites as $site) {
+                $siteSettings[$site->id] = [
+                    'hasUrls' => false,
+                    'uriFormat' => null,
+                    'template' => null,
+                ];
+            }
+
+            $sectorsGroup->setSiteSettings($siteSettings);
+            Craft::$app->getCategories()->saveGroup($sectorsGroup);
+        }
+
+        // Create or update sectors field
+        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
+
+        if (!$field) {
+            $field = new CategoriesField();
+            $field->name = 'Sectors';
+            $field->handle = 'assignmentSectors';
+            $field->groupId = $sectorsGroup->id;
+
+            $field->branchLimit = null; // No limit on categories
+            $field->selectionLabel = ''; // Optional selection label
+            $field->localizeRelations = false; // Don't localize relations
+
+            // Set the source to the sectors group
+            $field->source = "group:{$sectorsGroup->uid}";
+
+            Craft::$app->getFields()->saveField($field);
+        }
 
         return true;
     }
