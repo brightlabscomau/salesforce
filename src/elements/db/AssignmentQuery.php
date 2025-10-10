@@ -103,7 +103,7 @@ class AssignmentQuery extends ElementQuery
 
     public function filterBySectors($sectors=[]): self
     {
-        $this->andWhere(['sector' => $sectors]);
+        $this->withSectorTitles($sectors);
         return $this;
     }
 
@@ -189,6 +189,24 @@ class AssignmentQuery extends ElementQuery
         $sectors = Category::find()
             ->group('sectors')
             ->slug($slugs)
+            ->ids();
+
+        return $this->withSectors($sectors);
+    }
+
+    public function withSectorTitles($titles): self
+    {
+        if (empty($titles)) {
+            return $this;
+        }
+
+        if (!is_array($titles)) {
+            $titles = [$titles];
+        }
+
+        $sectors = Category::find()
+            ->group('sectors')
+            ->title($titles)
             ->ids();
 
         return $this->withSectors($sectors);
