@@ -3,6 +3,7 @@
 namespace brightlabs\craftsalesforce\elements\db;
 
 use Craft;
+use craft\elements\Category;
 use craft\elements\db\ElementQuery;
 use craft\helpers\Db;
 
@@ -157,6 +158,40 @@ class AssignmentQuery extends ElementQuery
     {
         $this->orderBy('sector ASC');
         return $this;
+    }
+
+        public function withSectors($sectorIds): self
+    {
+        if (empty($sectorIds)) {
+            return $this;
+        }
+
+        if (!is_array($sectorIds)) {
+            $sectorIds = [$sectorIds];
+        }
+
+        return $this->relatedTo([
+            'targetElement' => $sectorIds,
+            'field' => 'assignmentSectors'
+        ]);
+    }
+
+    public function withSectorSlugs($slugs): self
+    {
+        if (empty($slugs)) {
+            return $this;
+        }
+
+        if (!is_array($slugs)) {
+            $slugs = [$slugs];
+        }
+
+        $sectors = Category::find()
+            ->group('sectors')
+            ->slug($slugs)
+            ->ids();
+
+        return $this->withSectors($sectors);
     }
 
     protected function beforePrepare(): bool
