@@ -3,6 +3,7 @@
 namespace brightlabs\craftsalesforce\console\controllers;
 
 use craft\db\Query;
+use craft\elements\Category;
 use yii\console\ExitCode;
 use craft\helpers\Console;
 use craft\console\Controller;
@@ -704,5 +705,80 @@ class SyncController extends Controller
         $log->title = date('jS M Y g:i:s a');
         $log->logDetails = $logString;
         Salesforce::getInstance()->log->saveLog($log);
+    }
+
+    public function actionTest()
+    {
+        $assignment = Assignment::find()->one();
+
+        // Create a new assignment entry for testing
+        if ($assignment === null) {
+            $assignment = new Assignment();
+            $assignment->title = 'Test Assignment 1';
+            $assignment->salesforceId = (string) '123456789ABCDEF';
+            $assignment->positionId = (string) '123456';
+            $assignment->hybridVolunteeringNature = (string) 'Hybrid';
+            $assignment->workplace = (string) 'Remote';
+            $assignment->duration = (string) '3 months';
+            $assignment->startDate = (string) '2023-01-01';
+            $assignment->positionDescriptionUrl = (string) 'https://example.com/position-description';
+            $assignment->applicationCloseDate = (string) '2023-01-15';
+            $assignment->positionSummary = (string) 'This is a test position summary.';
+            $assignment->baseAllowance = (string) '50000';
+            $assignment->livingAllowance = (string) '20000';
+            $assignment->specialConditions = (string) 'No special conditions.';
+            $assignment->sector = (string) 'Test Sector';
+            $assignment->country = (string) 'Test Country';
+            $assignment->jsonContent = json_encode($this->json);
+            $assignment->publish = (string) 'AVP Portal (Public)';
+            Salesforce::getInstance()->assignment->saveAssignment($assignment);
+        }
+
+        // Check if relation exists and add multiple sectors
+        $assignment = Assignment::find()->one();
+        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
+
+        // Define the sectors you want to add (you can add more slugs here)
+        $sectorSlugs = ['education', 'natural-environmental-science']; // Add your second sector slug here
+        $sortOrder = 1;
+
+        foreach ($sectorSlugs as $sectorSlug) {
+            $sector = Category::find()->group('sectors')->slug($sectorSlug)->one();
+
+            if (!$sector) {
+                $this->stdout("Sector with slug '{$sectorSlug}' not found\n");
+                continue;
+            }
+
+            $relationExists = (new \yii\db\Query())
+                ->from('{{%relations}}')
+                ->where([
+                    'sourceId' => $assignment->id,
+                    'targetId' => $sector->id,
+                    'fieldId' => $field->id,
+                ])
+                ->exists();
+
+            if (!$relationExists && $assignment) {
+                Craft::$app->getDb()->createCommand()
+                    ->insert('{{%relations}}', [
+                        'sourceId' => $assignment->id,
+                        'sourceSiteId' => $assignment->siteId,
+                        'targetId' => $sector->id,
+                        'fieldId' => $field->id,
+                        'sortOrder' => $sortOrder,
+                    ])
+                    ->execute();
+
+                $this->stdout("Created relation: Assignment {$assignment->id} -> Sector {$sector->title}\n");
+                $sortOrder++; // Increment sort order for next sector
+            }
+        }
+
+        $multiSectorAssignments = Assignment::find()->withSectors([21237, 21240])->all();
+        $multiSectorAssignments = $assignment->getSectorNames();
+        dd($multiSectorAssignments);
+
+        return ExitCode::OK;
     }
 }
