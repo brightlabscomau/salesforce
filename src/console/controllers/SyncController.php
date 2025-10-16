@@ -274,6 +274,7 @@ class SyncController extends Controller
                     Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(Published_Status__c): {$record->Published_Status__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
                 }
 
+                $this->setAssignmentSectors($assignment, [$record->Sector__c]);
 
                 if ($assignment->publish !== 'Draft') {
                     $this->salesforcePublishUpdates[] = [
@@ -410,6 +411,56 @@ class SyncController extends Controller
         Logs::log("({$this->processedRecords}/{$this->totalRecords}) Published: {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_GREY]);
         Logs::log("({$this->processedRecords}/{$this->totalRecords}) Updated(PD_Link__c): {$assignment->url}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
         Logs::log("({$this->processedRecords}/{$this->totalRecords}) Updated(Published_Status__c): Published", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+    }
+
+    protected function setAssignmentSectors(Assignment $assignment, array $sectors): void
+    {
+
+        // Check if relation exists and add multiple sectors
+        $assignment = Assignment::find()->salesforceId($assignment->salesforceId)->one();
+        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
+
+        $sortOrder = 1;
+        foreach ($sectors as $sectorTitle) {
+            $sector = Category::find()->group('sectors')->title($sectorTitle)->one();
+
+            if ($sector === null) {
+                // create sectors category if it doesn't exist
+                $sector = new Category();
+                $sector->groupId = Craft::$app->categories->getGroupByHandle('sectors')->id;
+                $sector->title = $sectorTitle;
+                $sector->slug = ElementHelper::generateSlug($sectorTitle);
+                $sector->enabled = true;
+                Craft::$app->elements->saveElement($sector);
+
+                // get created sector
+                $sector = Category::find()->group('sectors')->title($sectorTitle)->one();
+            }
+
+
+            $relationExists = (new \yii\db\Query())
+                ->from('{{%relations}}')
+                ->where([
+                    'sourceId' => $assignment->id,
+                    'targetId' => $sector->id,
+                    'fieldId' => $field->id,
+                ])
+                ->exists();
+
+            if (!$relationExists && $assignment) {
+                Craft::$app->getDb()->createCommand()
+                    ->insert('{{%relations}}', [
+                        'sourceId' => $assignment->id,
+                        'sourceSiteId' => $assignment->siteId,
+                        'targetId' => $sector->id,
+                        'fieldId' => $field->id,
+                        'sortOrder' => $sortOrder,
+                    ])
+                    ->execute();
+
+                $sortOrder++; // Increment sort order for next sector
+            }
+        }
     }
 
     protected function unpublishAssignmentOnSalesforce(Assignment $assignment)
