@@ -138,6 +138,7 @@ class SyncController extends Controller
                 'Living_Allowance_Copy__c',
                 'Special_Conditions_Copy__c',
                 'Sector__c',
+                'Sectors_for_Advertising__c',
                 'Country__r.Name',
                 'PD_Link__c',
                 'Published_Status__c',
@@ -274,7 +275,7 @@ class SyncController extends Controller
                     Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(Published_Status__c): {$record->Published_Status__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
                 }
 
-                $this->setAssignmentSectors($assignment, [$record->Sector__c]);
+                $this->setAssignmentSectors($assignment, $record->Sectors_for_Advertising__c);
 
                 if ($assignment->publish !== 'Draft') {
                     $this->salesforcePublishUpdates[] = [
@@ -413,8 +414,20 @@ class SyncController extends Controller
         Logs::log("({$this->processedRecords}/{$this->totalRecords}) Updated(Published_Status__c): Published", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
     }
 
-    protected function setAssignmentSectors(Assignment $assignment, array $sectors): void
+    /**
+     * Set assignment sectors for assignments. Creates sector categories if they don't exist.
+     *
+     * @param Assignment $assignment
+     * @param string|null $sectors Semicolon-separated string of sector titles
+     * @return void
+     */
+    protected function setAssignmentSectors(Assignment $assignment, ?string $sectors): void
     {
+        if (empty($sectors)) {
+            return;
+        }
+
+        $sectors = explode(';', $sectors);
 
         // Check if relation exists and add multiple sectors
         $assignment = Assignment::find()->salesforceId($assignment->salesforceId)->one();
