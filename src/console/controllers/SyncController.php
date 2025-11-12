@@ -24,6 +24,8 @@ class SyncController extends Controller
     protected $salesforceClientId;
     protected $salesforceClientSecret;
     protected $salesforceToken;
+    protected $salesforcePublishUpdates = [];
+    protected $salesforceUnpublishUpdates = [];
 
     protected $json = [];
 
@@ -117,7 +119,7 @@ class SyncController extends Controller
     /**
      * Sync salesforce data
      */
-    public function actionAssignments($nextQuery=null): int
+    public function actionAssignments($nextQuery = null): int
     {
         if (empty($nextQuery)) {
             $query = new SalesforceQueryBuilder;
@@ -140,16 +142,15 @@ class SyncController extends Controller
                 'Published_Status__c',
                 'LastModifiedDate',
                 'Position_ID__c',
-                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r)'
+                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r WHERE Recruitment__c.Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))'
             ])
-            ->from('Position__c');
-
+                ->from('Position__c')
+                ->rawWhere('Id IN (SELECT Position__c FROM Recruitment__c WHERE Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))');
 
             $response = $this->query($query);
         }
 
-        if (!empty($nextQuery) && !$this->done)
-        {
+        if (!empty($nextQuery) && !$this->done) {
             Logs::log("Recursion query: {$this->nextRecordsQuery}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
 
             $this->getSalesforceToken();
@@ -165,6 +166,8 @@ class SyncController extends Controller
         if (!$this->done) {
             return $this->actionAssignments($this->nextRecordsQuery);
         }
+
+        $this->publishAssignments();
 
         $this->endTime = new DateTime();
         $this->timeElapsed = $this->endTime->diff($this->startTime);
@@ -187,115 +190,209 @@ class SyncController extends Controller
             return;
         }
 
-        foreach ($response->records as $index => $record) {
+        // Start database transaction
+        $transaction = Craft::$app->db->beginTransaction();
 
-            $id = (new Query())
-            ->select(['id'])
-            ->from(['salesforce_assignments'])
-            ->where(['positionId' => $record->Position_ID__c])
-            ->scalar();
+        try {
+            foreach ($response->records as $index => $record) {
 
-            if (!empty($id)) {
-                $assignment = Salesforce::getInstance()->assignment->getAssignmentById($id);
-            } else {
-                $assignment = new Assignment();
-            }
-
-            $assignment->title = $record->Name;
-            $assignment->salesforceId = (string) $record->Id;
-            $assignment->positionId = (string) $record->Position_ID__c;
-            $assignment->hybridVolunteeringNature = (string) $record->Hybrid_Volunteering_Nature__c;
-            $assignment->workplace = (string) $record->Workplace__c;
-            $assignment->duration = (string) $record->Duration__c;
-            $assignment->startDate = (string) $record->Start_Date__c;
-            $assignment->positionDescriptionUrl = (string) $record->Position_Description_URL__c;
-            $assignment->applicationCloseDate = (string) $record->Application_Close_Date__c;
-            $assignment->positionSummary = (string) $record->Position_Summary__c;
-            $assignment->baseAllowance = (string) $record->Base_Allowance_Figure__c;
-            $assignment->livingAllowance = (string) $record->Living_Allowance_Copy__c;
-            $assignment->specialConditions = (string) $record->Special_Conditions_Copy__c;
-            $assignment->sector = (string) $record->Sector__c;
-            $assignment->country = (string) $record->Country__r?->Name ?? '';
-
-            $this->processedRecords++;
-
-            // Skipping items if country is empty
-            if (empty($assignment->country)) {
-                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
-                $this->skippedRecords++;
-
-                if (empty($id)) {
+                if ($record->Position_ID__c === null) {
+                    Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing Position_ID__c): {$record->Name} - {$record->Id}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+                    $this->skippedRecords++;
                     continue;
                 }
 
-                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
-                $this->unpublishAssignmentOnSalesforce($assignment);
-                $this->deletedRecords++;
-                continue;
-            }
+                $assignment = Assignment::find()
+                    ->anyStatus()
+                    ->positionId($record->Position_ID__c)
+                    ->one() ?? new Assignment();
 
-            // Rename country if it has parentheses
-            if (stripos($assignment->country, '(') !== false) {
-                $assignment->country = trim(explode('(', $assignment->country)[0]);
-                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
-            }
+                $assignment->title = $record->Name;
+                $assignment->salesforceId = (string) $record->Id;
+                $assignment->positionId = (string) $record->Position_ID__c;
+                $assignment->hybridVolunteeringNature = (string) $record->Hybrid_Volunteering_Nature__c;
+                $assignment->workplace = (string) $record->Workplace__c;
+                $assignment->duration = (string) $record->Duration__c;
+                $assignment->startDate = (string) $record->Start_Date__c;
+                $assignment->positionDescriptionUrl = (string) $record->Position_Description_URL__c;
+                $assignment->applicationCloseDate = (string) $record->Application_Close_Date__c;
+                $assignment->positionSummary = (string) $record->Position_Summary__c;
+                $assignment->baseAllowance = (string) $record->Base_Allowance_Figure__c;
+                $assignment->livingAllowance = (string) $record->Living_Allowance_Copy__c;
+                $assignment->specialConditions = (string) $record->Special_Conditions_Copy__c;
+                $assignment->sector = (string) $record->Sector__c;
+                $assignment->country = (string) $record->Country__r?->Name ?? '';
+                $assignment->enabled = true;
 
-            if (empty($id)) {
-                $assignment->slug = ElementHelper::generateSlug($record->Name . ' ' . $assignment->country . ' ' . rand(100000, 999999));
-            }
+                $this->processedRecords++;
 
-            // Recruitment cycle
-            $recruitmentCycle = $this->getRecruitmentCycle($record->Recruitment__r);
-            $assignment->recruitmentStartDate = $recruitmentCycle->start;
-            $assignment->recruitmentEndDate = $recruitmentCycle->end;
-
-            // Set empty publish status to `Draft`
-            $assignment->publish = empty((string) $recruitmentCycle->publish)
-                ? 'Draft'
-                : (string) $recruitmentCycle->publish;
-
-            // Skipping items if invalid publish type
-            if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)', 'Draft'])) {
-                Logs::log("Publish status: {$assignment->publish}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
-                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
-                $this->skippedRecords++;
-
-                if (empty($id)) {
+                // Skipping items if country is empty
+                if ($this->isCountryEmpty($assignment)) {
                     continue;
                 }
 
-                Salesforce::getInstance()->assignment->deleteAssignment($assignment);
-                $this->unpublishAssignmentOnSalesforce($assignment);
-                $this->deletedRecords++;
-                continue;
+                // Rename country if it has parentheses
+                if (stripos($assignment->country, '(') !== false) {
+                    $assignment->country = trim(explode('(', $assignment->country)[0]);
+                    Logs::log("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
+                }
+
+                if (!$assignment->id) {
+                    $assignment->slug = ElementHelper::generateSlug($record->Name . ' ' . $assignment->country . ' ' . rand(100000, 999999));
+                }
+
+                // Recruitment cycle
+                $recruitmentCycle = $this->getRecruitmentCycle($record->Recruitment__r);
+                $assignment->recruitmentStartDate = $recruitmentCycle->start;
+                $assignment->recruitmentEndDate = $recruitmentCycle->end;
+
+                // Set empty publish status to `Draft`
+                $assignment->publish = empty((string) $recruitmentCycle->publish)
+                    ? 'Draft'
+                    : (string) $recruitmentCycle->publish;
+
+                // Skipping items if invalid publish type
+                if ($this->isInvalidPublishType($assignment)) {
+                    continue;
+                }
+
+                // Json data dump
+                $this->json['Position__c'] = $record;
+                $assignment->jsonContent = json_encode($this->json);
+
+                Salesforce::getInstance()->assignment->saveAssignment($assignment);
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId}:{$assignment->positionId}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+
+                if (!empty($record->PD_Link__c)) {
+                    Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(PD_Link__c): {$record->PD_Link__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+                }
+
+                if (!empty($record->Published_Status__c)) {
+                    Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(Published_Status__c): {$record->Published_Status__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
+                }
+
+
+                if ($assignment->publish !== 'Draft') {
+                    $this->salesforcePublishUpdates[] = [
+                        'id' => $assignment->salesforceId,
+                        'url' => $assignment->url,
+                    ];
+                }
+
+                $this->updatedRecords++;
             }
 
-            // Json data dump
-            $this->json['Position__c'] = $record;
-            $assignment->jsonContent = json_encode($this->json);
+            // Commit the transaction
+            $transaction->commit();
 
-            Salesforce::getInstance()->assignment->saveAssignment($assignment);
-            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId}:{$assignment->positionId}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+        } catch (\Throwable $e) {
+            // Rollback on any error
+            $transaction->rollBack();
 
-            if (!empty($record->PD_Link__c)) {
-                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(PD_Link__c): {$record->PD_Link__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
-            }
+            // Log the error
+            Logs::log("Transaction failed: {$e->getMessage()}", $this->logEntries, ['fgColor' => Console::FG_RED]);
 
-            if (!empty($record->Published_Status__c)) {
-                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(Published_Status__c): {$record->Published_Status__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
-            }
+            $log = new Log();
+            $log->title = date('jS M Y g:i:s a');
+            $log->logErrors = json_encode([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            Salesforce::getInstance()->log->saveLog($log);
 
-
-            if ($assignment->publish === 'Draft') {
-                $this->unpublishAssignmentOnSalesforce($assignment);
-            } else {
-                $this->publishAssignmentOnSalesforce($assignment);
-            }
-
-
-            $this->updatedRecords++;
+            throw $e; // Re-throw to stop execution
         }
 
+    }
+
+    private function isCountryEmpty(Assignment $assignment): bool
+    {
+        if (empty($assignment->country)) {
+            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+            $this->skippedRecords++;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function isInvalidPublishType(Assignment $assignment): bool
+    {
+        if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
+            Logs::log("Publish status: {$assignment->publish}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+            $this->skippedRecords++;
+
+            if (!$assignment->id || $assignment->enabled == false) {
+                return true;
+            }
+
+            // Disable assignment on Craft CMS
+            $assignment->enabled = false;
+            $assignment->publish = 'Draft';
+            Salesforce::getInstance()->assignment->saveAssignment($assignment);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function publishAssignments()
+    {
+        if (empty($this->salesforcePublishUpdates)) {
+            return;
+        }
+
+        // Unpublish records on CMS that are not in the $salesforcePublishUpdates array
+        $this->unpublishAssignments();
+
+        // Batch publish records on Salesforce
+        $this->batchPublishOnSalesforce($this->salesforcePublishUpdates);
+
+        // Batch unpublish records on Salesforce
+        $this->batchUnpublishOnSalesforce($this->salesforceUnpublishUpdates);
+    }
+
+    protected function unpublishAssignments()
+    {
+        // Get all Salesforce IDs that should be published
+        $publishedSalesforceIds = array_column($this->salesforcePublishUpdates, 'id');
+
+        // Find assignments NOT in the published list using NOT IN query
+        $assignmentsToUnpublish = Assignment::find()
+            ->status('enabled')
+            ->where(['not in', 'salesforceId', $publishedSalesforceIds])
+            ->all();
+
+        $unpublishedCount = 0;
+        $transaction = Craft::$app->db->beginTransaction();
+
+        try {
+            foreach ($assignmentsToUnpublish as $assignment) {
+                // Unpublish in Craft
+                $assignment->enabled = false;
+                $assignment->publish = 'Draft';
+                Salesforce::getInstance()->assignment->saveAssignment($assignment);
+
+                $this->salesforceUnpublishUpdates[] = [
+                    'id' => $assignment->salesforceId
+                ];
+
+                $unpublishedCount++;
+                Logs::log("Unpublished: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
+            }
+
+            $transaction->commit();
+
+            Logs::log("Assignments unpublished: {$unpublishedCount}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+
+        } catch (\Throwable $e) {
+            $transaction->rollBack();
+            Logs::log("Failed to unpublish: {$e->getMessage()}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+            throw $e;
+        }
     }
 
     protected function publishAssignmentOnSalesforce(Assignment $assignment)
@@ -325,7 +422,7 @@ class SyncController extends Controller
 
     protected function getRecruitmentCycle($recruitmentObj): ?object
     {
-        $validCycle = (object)[
+        $validCycle = (object) [
             'start' => '',
             'end' => '',
             'publish' => '',
@@ -339,8 +436,8 @@ class SyncController extends Controller
             foreach ($recruitmentObj->records as $record) {
 
                 $currentDate = date('Ymd');
-                $startDate = date_format(date_create_from_format('Y-m-d',  $record->Start_Date__c), 'Ymd');
-                $endDate = date_format(date_create_from_format('Y-m-d',  $record->End_Date__c), 'Ymd');
+                $startDate = date_format(date_create_from_format('Y-m-d', $record->Start_Date__c), 'Ymd');
+                $endDate = date_format(date_create_from_format('Y-m-d', $record->End_Date__c), 'Ymd');
 
                 if (
                     $currentDate >= $startDate &&
@@ -356,7 +453,7 @@ class SyncController extends Controller
         return $validCycle;
     }
 
-    protected function getNextRecordQuery($nextRecordsUrl=null): ?string
+    protected function getNextRecordQuery($nextRecordsUrl = null): ?string
     {
         if (empty($nextRecordsUrl)) {
             $this->done = true;
@@ -369,15 +466,16 @@ class SyncController extends Controller
         return strrev($query);
     }
 
-    protected function query(SalesforceQueryBuilder $query) {
+    protected function query(SalesforceQueryBuilder $query)
+    {
 
         $curl = curl_init();
 
-        $appendQParameter = $query->isTextQuery()? '' : '?q=';
+        $appendQParameter = $query->isTextQuery() ? '' : '?q=';
         $textQuery = $appendQParameter . $query->toString();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/'. $this->salesforceApiVersion .'/query/' . $textQuery,
+            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/' . $this->salesforceApiVersion . '/query/' . $textQuery,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -429,7 +527,7 @@ class SyncController extends Controller
             );
             Salesforce::getInstance()->log->saveLog($log);
 
-            $error = $jsonResponse[0] ?? (object)['errorCode' => 'MISSING_CREDENTIALS'];
+            $error = $jsonResponse[0] ?? (object) ['errorCode' => 'MISSING_CREDENTIALS'];
 
             if ($error->errorCode == 'INVALID_AUTH_HEADER') {
                 $this->stderr("Error: " . $jsonResponse[0]->message . "\n", Console::FG_RED);
@@ -462,7 +560,7 @@ class SyncController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/'. $this->salesforceApiVersion .'/sobjects/' . $salesforceObject . '/' . $field,
+            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/' . $this->salesforceApiVersion . '/sobjects/' . $salesforceObject . '/' . $field,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -502,6 +600,89 @@ class SyncController extends Controller
 
         // Log success response for debugging
         Logs::log("Salesforce field update response: {$response}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+
+        return true;
+    }
+
+    protected function batchPublishOnSalesforce(array $updates)
+    {
+        if (Craft::$app->env == 'dev' || empty($updates)) {
+            return;
+        }
+
+        // Salesforce Composite API allows max 200 records per request
+        $batches = array_chunk($updates, 200);
+
+        foreach ($batches as $batch) {
+            $compositeRequest = [
+                'allOrNone' => false,
+                'records' => array_map(function ($update) {
+                    return [
+                        'attributes' => ['type' => 'Position__c'],
+                        'Id' => $update['id'],
+                        'PD_Link__c' => $update['url'],
+                        'Published_Status__c' => 'Published',
+                    ];
+                }, $batch)
+            ];
+
+            $this->compositeUpdate($compositeRequest);
+        }
+
+        Logs::log("Batch published " . count($updates) . " assignments on Salesforce", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+    }
+
+    protected function batchUnpublishOnSalesforce(array $updates)
+    {
+        if (Craft::$app->env == 'dev' || empty($updates)) {
+            return;
+        }
+
+        // Salesforce Composite API allows max 200 records per request
+        $batches = array_chunk($updates, 200);
+
+        foreach ($batches as $batch) {
+            $compositeRequest = [
+                'allOrNone' => false,
+                'records' => array_map(function ($update) {
+                    return [
+                        'attributes' => ['type' => 'Position__c'],
+                        'Id' => $update['id'],
+                        'PD_Link__c' => '',
+                        'Published_Status__c' => 'Unpublished',
+                    ];
+                }, $batch)
+            ];
+
+            $this->compositeUpdate($compositeRequest);
+        }
+
+        Logs::log("Batch unpublished " . count($updates) . " assignments on Salesforce", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+    }
+
+    protected function compositeUpdate(array $compositeRequest)
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/' . $this->salesforceApiVersion . '/composite/sobjects',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_POSTFIELDS => json_encode($compositeRequest),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->salesforceToken,
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if ($httpCode >= 400) {
+            Logs::log("Batch update failed ({$httpCode}): {$response}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+            return false;
+        }
 
         return true;
     }
