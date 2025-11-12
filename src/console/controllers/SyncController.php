@@ -256,16 +256,20 @@ class SyncController extends Controller
                     : (string) $recruitmentCycle->publish;
 
                 // Skipping items if invalid publish type
-                if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)', 'Draft'])) {
+                if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
                     Logs::log("Publish status: {$assignment->publish}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                     Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                     $this->skippedRecords++;
 
-                    if (empty($id)) {
+                    if (!$assignment->id && !$assignment->enabled) {
                         continue;
                     }
 
-                    Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                    // Disable assignment on Craft CMS
+                    $assignment->enabled = false;
+                    $assignment->publish = 'Draft';
+                    Salesforce::getInstance()->assignment->saveAssignment($assignment);
+
                     $this->unpublishAssignmentOnSalesforce($assignment);
                     $this->deletedRecords++;
                     continue;
