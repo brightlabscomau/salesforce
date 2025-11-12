@@ -346,13 +346,13 @@ class SyncController extends Controller
             return;
         }
 
-        // TODO: Unpublish records on CMS that are not in the $salesforcePublishUpdates array
+        // Unpublish records on CMS that are not in the $salesforcePublishUpdates array
         $this->unpublishAssignments();
 
-        // TODO: Batch publish records on Salesforce
+        // Batch publish records on Salesforce
         $this->batchPublishOnSalesforce($this->salesforcePublishUpdates);
 
-        // TODO: Batch unpublish records on Salesforce
+        // Batch unpublish records on Salesforce
         $this->batchUnpublishOnSalesforce($this->salesforceUnpublishUpdates);
     }
 
