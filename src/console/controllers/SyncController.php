@@ -224,10 +224,7 @@ class SyncController extends Controller
                 $this->processedRecords++;
 
                 // Skipping items if country is empty
-                if (empty($assignment->country)) {
-                    Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
-                    $this->skippedRecords++;
-
+                if ($this->isCountryEmpty($assignment)) {
                     continue;
                 }
 
@@ -303,6 +300,18 @@ class SyncController extends Controller
             throw $e; // Re-throw to stop execution
         }
 
+    }
+
+    private function isCountryEmpty(Assignment $assignment): bool
+    {
+        if (empty($assignment->country)) {
+            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+            $this->skippedRecords++;
+
+            return true;
+        }
+
+        return false;
     }
 
     private function isInvalidPublishType(Assignment $assignment): bool
