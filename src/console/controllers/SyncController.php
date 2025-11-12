@@ -228,14 +228,6 @@ class SyncController extends Controller
                     Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                     $this->skippedRecords++;
 
-                    if (!$assignment->id) {
-                        continue;
-                    }
-
-                    // TODO: Verify and remove below code
-                    // Salesforce::getInstance()->assignment->deleteAssignment($assignment);
-                    // $this->unpublishAssignmentOnSalesforce($assignment);
-                    $this->deletedRecords++;
                     continue;
                 }
 
