@@ -187,7 +187,17 @@ class SyncController extends Controller
             return;
         }
 
-        foreach ($response->records as $index => $record) {
+        // Start database transaction
+        $transaction = Craft::$app->db->beginTransaction();
+
+        try {
+            foreach ($response->records as $index => $record) {
+
+            if ($record->Position_ID__c === null) {
+                Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing Position_ID__c): {$record->Name} - {$record->Id}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+                $this->skippedRecords++;
+                continue;
+            }
 
             $id = (new Query())
             ->select(['id'])
@@ -200,6 +210,8 @@ class SyncController extends Controller
             } else {
                 $assignment = new Assignment();
             }
+
+            dd($record);
 
             $assignment->title = $record->Name;
             $assignment->salesforceId = (string) $record->Id;
@@ -294,6 +306,27 @@ class SyncController extends Controller
 
 
             $this->updatedRecords++;
+        }
+
+        // Commit the transaction
+        $transaction->commit();
+
+        } catch (\Throwable $e) {
+            // Rollback on any error
+            $transaction->rollBack();
+
+            // Log the error
+            Logs::log("Transaction failed: {$e->getMessage()}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+
+            $log = new Log();
+            $log->title = date('jS M Y g:i:s a');
+            $log->logErrors = json_encode([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            Salesforce::getInstance()->log->saveLog($log);
+
+            throw $e; // Re-throw to stop execution
         }
 
     }
