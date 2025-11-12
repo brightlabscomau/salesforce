@@ -380,12 +380,12 @@ class SyncController extends Controller
                 ];
 
                 $unpublishedCount++;
-                Logs::log("Unpublished orphaned: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
+                Logs::log("Unpublished: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
             }
 
             $transaction->commit();
 
-            Logs::log("Orphaned assignments unpublished: {$unpublishedCount}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+            Logs::log("Assignments unpublished: {$unpublishedCount}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
 
         } catch (\Throwable $e) {
             $transaction->rollBack();
