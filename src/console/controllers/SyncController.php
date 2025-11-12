@@ -203,6 +203,7 @@ class SyncController extends Controller
                 }
 
                 $assignment = Assignment::find()
+                    ->status(null)
                     ->positionId($record->Position_ID__c)
                     ->one() ?? new Assignment();
 
