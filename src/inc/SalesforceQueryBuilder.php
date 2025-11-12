@@ -33,6 +33,12 @@ class SalesforceQueryBuilder
         return $this;
     }
 
+    public function rawWhere($rawCondition=''): SalesforceQueryBuilder
+    {
+        $this->where[] = "WHERE {$rawCondition}";
+        return $this;
+    }
+
     public function whereDate($column='', $comparator='', $value): SalesforceQueryBuilder
     {
         $this->where[] = "WHERE {$column} {$comparator} {$value}";

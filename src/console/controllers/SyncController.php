@@ -140,10 +140,10 @@ class SyncController extends Controller
                 'Published_Status__c',
                 'LastModifiedDate',
                 'Position_ID__c',
-                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r)'
+                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r WHERE Recruitment__c.Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))'
             ])
-                ->from('Position__c');
-
+                ->from('Position__c')
+                ->rawWhere('Id IN (SELECT Position__c FROM Recruitment__c WHERE Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))');
 
             $response = $this->query($query);
         }
