@@ -24,6 +24,7 @@ class SyncController extends Controller
     protected $salesforceClientId;
     protected $salesforceClientSecret;
     protected $salesforceToken;
+    protected $salesforcePublishUpdates = [];
 
     protected $json = [];
 
@@ -165,6 +166,8 @@ class SyncController extends Controller
             return $this->actionAssignments($this->nextRecordsQuery);
         }
 
+        $this->publishAssignments();
+
         $this->endTime = new DateTime();
         $this->timeElapsed = $this->endTime->diff($this->startTime);
 
@@ -225,12 +228,13 @@ class SyncController extends Controller
                     Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Country is empty): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
                     $this->skippedRecords++;
 
-                    if (empty($id)) {
+                    if (!$assignment->id) {
                         continue;
                     }
 
-                    Salesforce::getInstance()->assignment->deleteAssignment($assignment);
-                    $this->unpublishAssignmentOnSalesforce($assignment);
+                    // TODO: Verify and remove below code
+                    // Salesforce::getInstance()->assignment->deleteAssignment($assignment);
+                    // $this->unpublishAssignmentOnSalesforce($assignment);
                     $this->deletedRecords++;
                     continue;
                 }
@@ -276,12 +280,12 @@ class SyncController extends Controller
                 }
 
 
-                if ($assignment->publish === 'Draft') {
-                    $this->unpublishAssignmentOnSalesforce($assignment);
-                } else {
-                    $this->publishAssignmentOnSalesforce($assignment);
+                if ($assignment->publish !== 'Draft') {
+                    $this->salesforcePublishUpdates[] = [
+                        'id' => $assignment->salesforceId,
+                        'url' => $assignment->url,
+                    ];
                 }
-
 
                 $this->updatedRecords++;
             }
@@ -325,12 +329,60 @@ class SyncController extends Controller
             $assignment->publish = 'Draft';
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
 
-            $this->unpublishAssignmentOnSalesforce($assignment);
             $this->deletedRecords++;
             return true;
         }
 
         return false;
+    }
+
+    protected function publishAssignments()
+    {
+        if (empty($this->salesforcePublishUpdates)) {
+            return;
+        }
+
+        // TODO: Unpublish records on CMS that are not in the $salesforcePublishUpdates array
+        $this->unpublishAssignments();
+
+        // TODO: Batch update records on Salesforce
+        dd(1);
+    }
+
+    protected function unpublishAssignments()
+    {
+        // Get all Salesforce IDs that should be published
+        $publishedSalesforceIds = array_column($this->salesforcePublishUpdates, 'id');
+
+        // Find assignments NOT in the published list using NOT IN query
+        $assignmentsToUnpublish = Assignment::find()
+            ->status('enabled')
+            ->where(['not in', 'salesforceId', $publishedSalesforceIds])
+            ->all();
+
+        $unpublishedCount = 0;
+        $transaction = Craft::$app->db->beginTransaction();
+
+        try {
+            foreach ($assignmentsToUnpublish as $assignment) {
+                // Unpublish in Craft
+                $assignment->enabled = false;
+                $assignment->publish = 'Draft';
+                Salesforce::getInstance()->assignment->saveAssignment($assignment);
+
+                $unpublishedCount++;
+                Logs::log("Unpublished orphaned: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
+            }
+
+            $transaction->commit();
+
+            Logs::log("Orphaned assignments unpublished: {$unpublishedCount}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+
+        } catch (\Throwable $e) {
+            $transaction->rollBack();
+            Logs::log("Failed to unpublish: {$e->getMessage()}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+            throw $e;
+        }
     }
 
     protected function publishAssignmentOnSalesforce(Assignment $assignment)
