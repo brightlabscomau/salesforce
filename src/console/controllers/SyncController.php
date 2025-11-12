@@ -198,19 +198,9 @@ class SyncController extends Controller
                     continue;
                 }
 
-                $id = (new Query())
-                    ->select(['id'])
-                    ->from(['salesforce_assignments'])
-                    ->where(['positionId' => $record->Position_ID__c])
-                    ->scalar();
-
-                if (!empty($id)) {
-                    $assignment = Salesforce::getInstance()->assignment->getAssignmentById($id);
-                } else {
-                    $assignment = new Assignment();
-                }
-
-                dd($record);
+                $assignment = Assignment::find()
+                    ->positionId($record->Position_ID__c)
+                    ->one() ?? new Assignment();
 
                 $assignment->title = $record->Name;
                 $assignment->salesforceId = (string) $record->Id;
@@ -251,7 +241,7 @@ class SyncController extends Controller
                     Logs::log("({$this->processedRecords}/{$this->totalRecords}) Renamed(Country): {$record->Country__r?->Name} to {$assignment->country} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
                 }
 
-                if (empty($id)) {
+                if (!$assignment->id) {
                     $assignment->slug = ElementHelper::generateSlug($record->Name . ' ' . $assignment->country . ' ' . rand(100000, 999999));
                 }
 
