@@ -25,6 +25,7 @@ class SyncController extends Controller
     protected $salesforceClientSecret;
     protected $salesforceToken;
     protected $salesforcePublishUpdates = [];
+    protected $salesforceUnpublishUpdates = [];
 
     protected $json = [];
 
@@ -346,8 +347,11 @@ class SyncController extends Controller
         // TODO: Unpublish records on CMS that are not in the $salesforcePublishUpdates array
         $this->unpublishAssignments();
 
-        // TODO: Batch update records on Salesforce
-        dd(1);
+        // TODO: Batch publish records on Salesforce
+        $this->batchPublishOnSalesforce($this->salesforcePublishUpdates);
+
+        // TODO: Batch unpublish records on Salesforce
+        $this->batchUnpublishOnSalesforce($this->salesforceUnpublishUpdates);
     }
 
     protected function unpublishAssignments()
@@ -370,6 +374,10 @@ class SyncController extends Controller
                 $assignment->enabled = false;
                 $assignment->publish = 'Draft';
                 Salesforce::getInstance()->assignment->saveAssignment($assignment);
+
+                $this->salesforceUnpublishUpdates[] = [
+                    'id' => $assignment->salesforceId
+                ];
 
                 $unpublishedCount++;
                 Logs::log("Unpublished orphaned: {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_YELLOW]);
@@ -591,6 +599,89 @@ class SyncController extends Controller
 
         // Log success response for debugging
         Logs::log("Salesforce field update response: {$response}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+
+        return true;
+    }
+
+    protected function batchPublishOnSalesforce(array $updates)
+    {
+        if (Craft::$app->env == 'dev' || empty($updates)) {
+            return;
+        }
+
+        // Salesforce Composite API allows max 200 records per request
+        $batches = array_chunk($updates, 200);
+
+        foreach ($batches as $batch) {
+            $compositeRequest = [
+                'allOrNone' => false,
+                'records' => array_map(function ($update) {
+                    return [
+                        'attributes' => ['type' => 'Position__c'],
+                        'Id' => $update['id'],
+                        'PD_Link__c' => $update['url'],
+                        'Published_Status__c' => 'Published',
+                    ];
+                }, $batch)
+            ];
+
+            $this->compositeUpdate($compositeRequest);
+        }
+
+        Logs::log("Batch published " . count($updates) . " assignments on Salesforce", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+    }
+
+    protected function batchUnpublishOnSalesforce(array $updates)
+    {
+        if (Craft::$app->env == 'dev' || empty($updates)) {
+            return;
+        }
+
+        // Salesforce Composite API allows max 200 records per request
+        $batches = array_chunk($updates, 200);
+
+        foreach ($batches as $batch) {
+            $compositeRequest = [
+                'allOrNone' => false,
+                'records' => array_map(function ($update) {
+                    return [
+                        'attributes' => ['type' => 'Position__c'],
+                        'Id' => $update['id'],
+                        'PD_Link__c' => '',
+                        'Published_Status__c' => 'Unpublished',
+                    ];
+                }, $batch)
+            ];
+
+            $this->compositeUpdate($compositeRequest);
+        }
+
+        Logs::log("Batch unpublished " . count($updates) . " assignments on Salesforce", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+    }
+
+    protected function compositeUpdate(array $compositeRequest)
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => rtrim($this->salesforceInstanceUrl, '/') . '/services/data/' . $this->salesforceApiVersion . '/composite/sobjects',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_POSTFIELDS => json_encode($compositeRequest),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->salesforceToken,
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if ($httpCode >= 400) {
+            Logs::log("Batch update failed ({$httpCode}): {$response}", $this->logEntries, ['fgColor' => Console::FG_RED]);
+            return false;
+        }
 
         return true;
     }
