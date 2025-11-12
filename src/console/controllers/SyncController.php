@@ -256,22 +256,7 @@ class SyncController extends Controller
                     : (string) $recruitmentCycle->publish;
 
                 // Skipping items if invalid publish type
-                if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
-                    Logs::log("Publish status: {$assignment->publish}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
-                    Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
-                    $this->skippedRecords++;
-
-                    if (!$assignment->id && !$assignment->enabled) {
-                        continue;
-                    }
-
-                    // Disable assignment on Craft CMS
-                    $assignment->enabled = false;
-                    $assignment->publish = 'Draft';
-                    Salesforce::getInstance()->assignment->saveAssignment($assignment);
-
-                    $this->unpublishAssignmentOnSalesforce($assignment);
-                    $this->deletedRecords++;
+                if ($this->isInvalidPublishType($assignment)) {
                     continue;
                 }
 
@@ -322,6 +307,30 @@ class SyncController extends Controller
             throw $e; // Re-throw to stop execution
         }
 
+    }
+
+    private function isInvalidPublishType(Assignment $assignment): bool
+    {
+        if (!in_array($assignment->publish, ['AVP Portal (Public)', 'AVP Portal (Private)'])) {
+            Logs::log("Publish status: {$assignment->publish}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+            Logs::log("({$this->processedRecords}/{$this->totalRecords}) Skipped(Missing publish status): {$assignment->title} - {$assignment->salesforceId}", $this->logEntries, ['fgColor' => Console::FG_PURPLE]);
+            $this->skippedRecords++;
+
+            if (!$assignment->id || $assignment->enabled == false) {
+                return true;
+            }
+
+            // Disable assignment on Craft CMS
+            $assignment->enabled = false;
+            $assignment->publish = 'Draft';
+            Salesforce::getInstance()->assignment->saveAssignment($assignment);
+
+            $this->unpublishAssignmentOnSalesforce($assignment);
+            $this->deletedRecords++;
+            return true;
+        }
+
+        return false;
     }
 
     protected function publishAssignmentOnSalesforce(Assignment $assignment)
