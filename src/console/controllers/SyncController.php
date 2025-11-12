@@ -333,7 +333,6 @@ class SyncController extends Controller
             $assignment->publish = 'Draft';
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
 
-            $this->deletedRecords++;
             return true;
         }
 
