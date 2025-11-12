@@ -203,7 +203,7 @@ class SyncController extends Controller
                 }
 
                 $assignment = Assignment::find()
-                    ->status(null)
+                    ->anyStatus()
                     ->positionId($record->Position_ID__c)
                     ->one() ?? new Assignment();
 
@@ -222,6 +222,7 @@ class SyncController extends Controller
                 $assignment->specialConditions = (string) $record->Special_Conditions_Copy__c;
                 $assignment->sector = (string) $record->Sector__c;
                 $assignment->country = (string) $record->Country__r?->Name ?? '';
+                $assignment->enabled = true;
 
                 $this->processedRecords++;
 
