@@ -222,7 +222,9 @@ class SyncController extends Controller
                 $assignment->specialConditions = (string) $record->Special_Conditions_Copy__c;
                 $assignment->sector = (string) $record->Sector__c;
                 $assignment->country = (string) $record->Country__r?->Name ?? '';
-                $assignment->enabled = true;
+
+                // Enable only if Published_Status__c is 'Published'
+                $assignment->enabled = (string) $record->Published_Status__c === 'Published';
 
                 $this->processedRecords++;
 
