@@ -14,6 +14,7 @@ use craft\helpers\UrlHelper;
 use craft\web\CpScreenResponseBehavior;
 use yii\web\Response;
 use craft\helpers\Db;
+use craft\elements\Category;
 
 /**
  * Assignment element type
@@ -43,6 +44,11 @@ class Assignment extends Element
     public ?string $filterSector = null;
     public ?string $filterTheme = null;
     public ?string $filterStories = null;
+
+    /**
+     * @var Category[]|null Sectors categories
+     */
+    private ?array $_sectors = null;
 
     public static function displayName(): string
     {
@@ -294,6 +300,47 @@ class Assignment extends Element
         ];
     }
 
+        /**
+     * Get sector categories for this assignment
+     */
+    public function getSectors(): array
+    {
+        if ($this->_sectors === null) {
+            if ($this->id) {
+                $this->_sectors = Category::find()
+                    ->group('sectors')
+                    ->relatedTo($this)
+                    ->all();
+            } else {
+                $this->_sectors = [];
+            }
+        }
+        return $this->_sectors;
+    }
+
+    /**
+     * Set sector categories for this assignment
+     */
+    public function setSectors($sectors): void
+    {
+        $this->_sectors = is_array($sectors) ? $sectors : [$sectors];
+    }
+
+    /**
+     * Get sector names as array
+     */
+    public function getSectorNames(): array
+    {
+        return array_map(fn($sector) => $sector->title, $this->getSectors());
+    }
+
+    /**
+     * Get sectors as comma-separated string
+     */
+    public function getSectorString(): string
+    {
+        return implode(', ', $this->getSectorNames());
+    }
 
     public function afterSave(bool $isNew): void
     {

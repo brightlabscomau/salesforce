@@ -225,7 +225,7 @@ class AssignmentsController extends Controller
                     'positionDescriptionUrl' => $assignment->positionDescriptionUrl,
                     'applicationCloseDate' => $applicationCloseDate,
                     'positionSummary' => mb_convert_encoding(substr(strip_tags($assignment->positionSummary), 0, 250), 'UTF-8') . '...',
-                    'sector' => $assignment->sector,
+                    'sector' => $assignment->getSectorString(),
                     'country' => $assignment->country,
                     'publish' => $assignment->publish,
                     'recruitmentStartDate' => $assignment->recruitmentStartDate,
