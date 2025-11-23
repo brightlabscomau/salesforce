@@ -2,6 +2,7 @@
 
 namespace brightlabs\craftsalesforce\console\controllers;
 
+use brightlabs\craftsalesforce\enums\RecruitmentCycleStatus;
 use craft\db\Query;
 use yii\console\ExitCode;
 use craft\helpers\Console;
@@ -256,7 +257,7 @@ class SyncController extends Controller
                 }
 
                 (
-                    $recruitmentCycle->status === 'Advertised'
+                    $recruitmentCycle->status === RecruitmentCycleStatus::Advertised->value
                     && $assignment->recruitmentStartDate <= date('Y-m-d') && $assignment->recruitmentEndDate >= date('Y-m-d')
                 )
                 ? $assignment->enabled = true
