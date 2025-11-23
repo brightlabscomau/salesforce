@@ -2,6 +2,7 @@
 
 namespace brightlabs\craftsalesforce\console\controllers;
 
+use brightlabs\craftsalesforce\enums\RecruitmentCycleStatus;
 use craft\db\Query;
 use craft\elements\Category;
 use yii\console\ExitCode;
@@ -144,7 +145,7 @@ class SyncController extends Controller
                 'Published_Status__c',
                 'LastModifiedDate',
                 'Position_ID__c',
-                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r WHERE Recruitment__c.Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))'
+                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c, Recruitment__c.Status__c FROM Recruitment__r WHERE Recruitment__c.Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))'
             ])
                 ->from('Position__c')
                 ->rawWhere('Id IN (SELECT Position__c FROM Recruitment__c WHERE Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))');
@@ -225,9 +226,6 @@ class SyncController extends Controller
                 $assignment->sector = (string) $record->Sector__c;
                 $assignment->country = (string) $record->Country__r?->Name ?? '';
 
-                // Enable only if Published_Status__c is 'Published'
-                $assignment->enabled = (string) $record->Published_Status__c === 'Published';
-
                 $this->processedRecords++;
 
                 // Skipping items if country is empty
@@ -259,6 +257,13 @@ class SyncController extends Controller
                 if ($this->isInvalidPublishType($assignment)) {
                     continue;
                 }
+
+                (
+                    $recruitmentCycle->status === RecruitmentCycleStatus::Advertised->value
+                    && $assignment->recruitmentStartDate <= date('Y-m-d') && $assignment->recruitmentEndDate >= date('Y-m-d')
+                )
+                ? $assignment->enabled = true
+                : $assignment->enabled = false;
 
                 // Json data dump
                 $this->json['Position__c'] = $record;
@@ -493,6 +498,7 @@ class SyncController extends Controller
             'start' => '',
             'end' => '',
             'publish' => '',
+            'status' => '',
         ];
 
         if (empty($recruitmentObj)) {
@@ -513,6 +519,7 @@ class SyncController extends Controller
                     $validCycle->start = $record->Start_Date__c;
                     $validCycle->end = $record->End_Date__c;
                     $validCycle->publish = $record->Publish__c;
+                    $validCycle->status = $record->Status__c;
                 }
             }
         }
