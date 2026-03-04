@@ -467,29 +467,17 @@ class SyncController extends Controller
                 $sector = Category::find()->group('sectors')->title($sectorTitle)->one();
             }
 
+            Craft::$app->getDb()->createCommand()
+                ->insert('{{%relations}}', [
+                    'sourceId' => $assignment->id,
+                    'sourceSiteId' => $assignment->siteId,
+                    'targetId' => $sector->id,
+                    'fieldId' => $field->id,
+                    'sortOrder' => $sortOrder,
+                ])
+                ->execute();
 
-            // $relationExists = (new \yii\db\Query())
-            //     ->from('{{%relations}}')
-            //     ->where([
-            //         'sourceId' => $assignment->id,
-            //         'targetId' => $sector->id,
-            //         'fieldId' => $field->id,
-            //     ])
-            //     ->exists();
-
-            // if (!$relationExists && $assignment) {
-                Craft::$app->getDb()->createCommand()
-                    ->insert('{{%relations}}', [
-                        'sourceId' => $assignment->id,
-                        'sourceSiteId' => $assignment->siteId,
-                        'targetId' => $sector->id,
-                        'fieldId' => $field->id,
-                        'sortOrder' => $sortOrder,
-                    ])
-                    ->execute();
-
-                $sortOrder++; // Increment sort order for next sector
-            // }
+            $sortOrder++; // Increment sort order for next sector
         }
     }
 
