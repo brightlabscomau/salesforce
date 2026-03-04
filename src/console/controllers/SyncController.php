@@ -428,15 +428,27 @@ class SyncController extends Controller
      */
     protected function setAssignmentSectors(Assignment $assignment, ?string $sectors): void
     {
+        // Check if relation exists and add multiple sectors
+        $assignment = Assignment::find()->salesforceId($assignment->salesforceId)->one();
+        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
+
+        if (!$assignment || !$field) {
+            return;
+        }
+
+        // Remove existing relations
+        Craft::$app->getDb()->createCommand()
+            ->delete('{{%relations}}', [
+                'sourceId' => $assignment->id,
+                'fieldId' => $field->id,
+            ])
+            ->execute();
+
         if (empty($sectors)) {
             return;
         }
 
         $sectors = explode(';', $sectors);
-
-        // Check if relation exists and add multiple sectors
-        $assignment = Assignment::find()->salesforceId($assignment->salesforceId)->one();
-        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
 
         $sortOrder = 1;
         foreach ($sectors as $sectorTitle) {
@@ -456,16 +468,16 @@ class SyncController extends Controller
             }
 
 
-            $relationExists = (new \yii\db\Query())
-                ->from('{{%relations}}')
-                ->where([
-                    'sourceId' => $assignment->id,
-                    'targetId' => $sector->id,
-                    'fieldId' => $field->id,
-                ])
-                ->exists();
+            // $relationExists = (new \yii\db\Query())
+            //     ->from('{{%relations}}')
+            //     ->where([
+            //         'sourceId' => $assignment->id,
+            //         'targetId' => $sector->id,
+            //         'fieldId' => $field->id,
+            //     ])
+            //     ->exists();
 
-            if (!$relationExists && $assignment) {
+            // if (!$relationExists && $assignment) {
                 Craft::$app->getDb()->createCommand()
                     ->insert('{{%relations}}', [
                         'sourceId' => $assignment->id,
@@ -477,7 +489,7 @@ class SyncController extends Controller
                     ->execute();
 
                 $sortOrder++; // Increment sort order for next sector
-            }
+            // }
         }
     }
 
