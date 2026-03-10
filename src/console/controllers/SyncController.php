@@ -17,6 +17,7 @@ use Craft;
 use DateTime;
 use yii\db\QueryBuilder;
 use craft\helpers\ElementHelper;
+use craft\fields\Categories as CategoriesField;
 
 class SyncController extends Controller
 {
@@ -431,6 +432,25 @@ class SyncController extends Controller
         // Check if relation exists and add multiple sectors
         $assignment = Assignment::find()->salesforceId($assignment->salesforceId)->one();
         $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
+
+        // If the field is missing recreate it
+        // This can happen after atomic deployments
+        if (!$field) {
+            $sectorsGroup = Craft::$app->getCategories()->getGroupByHandle('sectors');
+            $field = new CategoriesField();
+            $field->name = 'Sectors';
+            $field->handle = 'assignmentSectors';
+            $field->groupId = $sectorsGroup->id;
+
+            $field->branchLimit = null; // No limit on categories
+            $field->selectionLabel = ''; // Optional selection label
+            $field->localizeRelations = false; // Don't localize relations
+
+            // Set the source to the sectors group
+            $field->source = "group:{$sectorsGroup->uid}";
+
+            Craft::$app->getFields()->saveField($field);
+        }
 
         if (!$assignment || !$field) {
             return;
