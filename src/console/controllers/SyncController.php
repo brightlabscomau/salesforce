@@ -2,6 +2,7 @@
 
 namespace brightlabs\craftsalesforce\console\controllers;
 
+use brightlabs\craftsalesforce\enums\RecruitmentCycleStatus;
 use craft\db\Query;
 use craft\elements\Category;
 use yii\console\ExitCode;
@@ -16,6 +17,7 @@ use Craft;
 use DateTime;
 use yii\db\QueryBuilder;
 use craft\helpers\ElementHelper;
+use craft\fields\Categories as CategoriesField;
 
 class SyncController extends Controller
 {
@@ -144,7 +146,7 @@ class SyncController extends Controller
                 'Published_Status__c',
                 'LastModifiedDate',
                 'Position_ID__c',
-                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c FROM Recruitment__r WHERE Recruitment__c.Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))'
+                '(SELECT Recruitment__c.Id,Recruitment__c.Name,Recruitment__c.Start_Date__c,Recruitment__c.End_Date__c,Recruitment__c.Publish__c, Recruitment__c.Status__c FROM Recruitment__r WHERE Recruitment__c.Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))'
             ])
                 ->from('Position__c')
                 ->rawWhere('Id IN (SELECT Position__c FROM Recruitment__c WHERE Publish__c IN (\'AVP Portal (Public)\', \'AVP Portal (Private)\'))');
@@ -225,9 +227,6 @@ class SyncController extends Controller
                 $assignment->sector = (string) $record->Sector__c;
                 $assignment->country = (string) $record->Country__r?->Name ?? '';
 
-                // Enable only if Published_Status__c is 'Published'
-                $assignment->enabled = (string) $record->Published_Status__c === 'Published';
-
                 $this->processedRecords++;
 
                 // Skipping items if country is empty
@@ -259,6 +258,13 @@ class SyncController extends Controller
                 if ($this->isInvalidPublishType($assignment)) {
                     continue;
                 }
+
+                (
+                    $recruitmentCycle->status === RecruitmentCycleStatus::Advertised->value
+                    && $assignment->recruitmentStartDate <= date('Y-m-d') && $assignment->recruitmentEndDate >= date('Y-m-d')
+                )
+                ? $assignment->enabled = true
+                : $assignment->enabled = false;
 
                 // Json data dump
                 $this->json['Position__c'] = $record;
@@ -423,15 +429,46 @@ class SyncController extends Controller
      */
     protected function setAssignmentSectors(Assignment $assignment, ?string $sectors): void
     {
+        // Check if relation exists and add multiple sectors
+        $assignment = Assignment::find()->salesforceId($assignment->salesforceId)->one();
+        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
+
+        // If the field is missing recreate it
+        // This can happen after atomic deployments
+        if (!$field) {
+            $sectorsGroup = Craft::$app->getCategories()->getGroupByHandle('sectors');
+            $field = new CategoriesField();
+            $field->name = 'Sectors';
+            $field->handle = 'assignmentSectors';
+            $field->groupId = $sectorsGroup->id;
+
+            $field->branchLimit = null; // No limit on categories
+            $field->selectionLabel = ''; // Optional selection label
+            $field->localizeRelations = false; // Don't localize relations
+
+            // Set the source to the sectors group
+            $field->source = "group:{$sectorsGroup->uid}";
+
+            Craft::$app->getFields()->saveField($field);
+        }
+
+        if (!$assignment || !$field) {
+            return;
+        }
+
+        // Remove existing relations
+        Craft::$app->getDb()->createCommand()
+            ->delete('{{%relations}}', [
+                'sourceId' => $assignment->id,
+                'fieldId' => $field->id,
+            ])
+            ->execute();
+
         if (empty($sectors)) {
             return;
         }
 
         $sectors = explode(';', $sectors);
-
-        // Check if relation exists and add multiple sectors
-        $assignment = Assignment::find()->salesforceId($assignment->salesforceId)->one();
-        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
 
         $sortOrder = 1;
         foreach ($sectors as $sectorTitle) {
@@ -450,29 +487,17 @@ class SyncController extends Controller
                 $sector = Category::find()->group('sectors')->title($sectorTitle)->one();
             }
 
-
-            $relationExists = (new \yii\db\Query())
-                ->from('{{%relations}}')
-                ->where([
+            Craft::$app->getDb()->createCommand()
+                ->insert('{{%relations}}', [
                     'sourceId' => $assignment->id,
+                    'sourceSiteId' => $assignment->siteId,
                     'targetId' => $sector->id,
                     'fieldId' => $field->id,
+                    'sortOrder' => $sortOrder,
                 ])
-                ->exists();
+                ->execute();
 
-            if (!$relationExists && $assignment) {
-                Craft::$app->getDb()->createCommand()
-                    ->insert('{{%relations}}', [
-                        'sourceId' => $assignment->id,
-                        'sourceSiteId' => $assignment->siteId,
-                        'targetId' => $sector->id,
-                        'fieldId' => $field->id,
-                        'sortOrder' => $sortOrder,
-                    ])
-                    ->execute();
-
-                $sortOrder++; // Increment sort order for next sector
-            }
+            $sortOrder++; // Increment sort order for next sector
         }
     }
 
@@ -493,6 +518,7 @@ class SyncController extends Controller
             'start' => '',
             'end' => '',
             'publish' => '',
+            'status' => '',
         ];
 
         if (empty($recruitmentObj)) {
@@ -513,6 +539,7 @@ class SyncController extends Controller
                     $validCycle->start = $record->Start_Date__c;
                     $validCycle->end = $record->End_Date__c;
                     $validCycle->publish = $record->Publish__c;
+                    $validCycle->status = $record->Status__c;
                 }
             }
         }
