@@ -5,7 +5,7 @@ namespace brightlabs\craftsalesforce\services;
 use brightlabs\craftsalesforce\elements\Assignment as ElementsAssignment;
 use Craft;
 use yii\base\Component;
-use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\Api\SearchClient;
 use craft\helpers\App;
 
 /**
@@ -40,7 +40,6 @@ class Assignment extends Component
                     $this->deleteOnAlgolia($assignment);
                     break;
             }
-
         }
 
         return $result;
@@ -62,17 +61,16 @@ class Assignment extends Component
         }
 
         $client = SearchClient::create(App::env('ALGOLIA_APPLICATION_ID'), App::env('ALGOLIA_ADMIN_API_KEY'));
-        $index = $client->initIndex(App::env('ALGOLIA_INDEX_ASSIGNMENTS'));
 
-        $assignmentArray = [
-            'objectID' => $assignment->salesforceId,
-            'title' => $assignment->title ?? '',
-            'country' => $assignment->country ?? '',
-            'duration' => $assignment->duration ?? '0',
-            'uri' => $assignment->uri ?? '',
-        ];
-
-        $index->saveObject($assignmentArray);
+        $client->saveObjects(App::env('ALGOLIA_INDEX_ASSIGNMENTS'), [
+            [
+                'objectID' => $assignment->salesforceId,
+                'title' => $assignment->title ?? '',
+                'country' => $assignment->country ?? '',
+                'duration' => $assignment->duration ?? '0',
+                'uri' => $assignment->uri ?? '',
+            ],
+        ]);
     }
 
     protected function deleteOnAlgolia(ElementsAssignment $assignment)
@@ -82,7 +80,6 @@ class Assignment extends Component
         }
 
         $client = SearchClient::create(App::env('ALGOLIA_APPLICATION_ID'), App::env('ALGOLIA_ADMIN_API_KEY'));
-        $index = $client->initIndex(App::env('ALGOLIA_INDEX_ASSIGNMENTS'));
-        $index->deleteObject($assignment->salesforceId);
+        $client->deleteObject(App::env('ALGOLIA_INDEX_ASSIGNMENTS'), $assignment->salesforceId);
     }
 }

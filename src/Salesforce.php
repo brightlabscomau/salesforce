@@ -12,7 +12,6 @@ use brightlabs\craftsalesforce\services\Log as LogService;
 use brightlabs\craftsalesforce\variables\CraftVariableBehavior;
 use craft\base\Model;
 use craft\base\Plugin;
-use craft\db\Table;
 use craft\events\DefineBehaviorsEvent;
 use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\RegisterComponentTypesEvent;
@@ -60,11 +59,10 @@ class Salesforce extends Plugin
         parent::init();
 
         // Defer most setup tasks until Craft is fully initialized
-        Craft::$app->onInit(function() {
+        Craft::$app->onInit(function () {
             $this->attachEventHandlers();
             // ...
         });
-
     }
 
     public function getSettingsResponse(): mixed
@@ -101,7 +99,7 @@ class Salesforce extends Plugin
         Event::on(
             Cp::class,
             Cp::EVENT_REGISTER_CP_NAV_ITEMS,
-            function(RegisterCpNavItemsEvent $event) {
+            function (RegisterCpNavItemsEvent $event) {
                 $event->navItems[] = [
                     'url' => 'salesforce',
                     'label' => 'Salesforce',
@@ -135,7 +133,6 @@ class Salesforce extends Plugin
                 $event->rules['salesforce/test'] = 'salesforce/test';
 
                 $event->rules['salesforce/logs'] = 'salesforce/logs';
-
             }
         );
 
@@ -160,25 +157,11 @@ class Salesforce extends Plugin
                     'id'
                 );
 
-                // Delete `elements` table rows without corresponding `content` table rows for the custom element
-                Craft::$app->getGc()->deletePartialElements(
-                    Assignment::class,
-                    Table::CONTENT,
-                    'elementId',
-                );
-
                 // Delete `elements` table rows without peers in our custom logs table
                 Craft::$app->getGc()->deletePartialElements(
                     Log::class,
                     'salesforce_logs',
                     'id'
-                );
-
-                // Delete `elements` table rows without corresponding `content` table rows for the custom element
-                Craft::$app->getGc()->deletePartialElements(
-                    Log::class,
-                    Table::CONTENT,
-                    'elementId',
                 );
             }
         );
@@ -187,7 +170,7 @@ class Salesforce extends Plugin
             Fields::EVENT_REGISTER_FIELD_TYPES,
             function (RegisterComponentTypesEvent $event) {
                 $event->types[] = Assignments::class;
-             }
+            }
         );
     }
 }
