@@ -48,8 +48,7 @@ class LogsController extends Controller
 
         $log = new Log();
 
-        $syncDateTime = new date('jS M Y g:i:s a');
-        $log->title = $syncDateTime;
+        $log->title = (new \DateTime())->format('jS M Y g:i:s a');
         $log->logDetails = $logDetails;
         $log->logErrors = $logErrors;
 
