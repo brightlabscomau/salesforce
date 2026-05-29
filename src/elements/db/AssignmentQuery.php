@@ -17,6 +17,7 @@ class AssignmentQuery extends ElementQuery
     public $country;
     public $sector;
     public $hybridVolunteeringNature;
+    public bool $public = false;
 
     public function salesforceId($value): self
     {
@@ -115,7 +116,7 @@ class AssignmentQuery extends ElementQuery
 
     public function isPublic(): self
     {
-        $this->andWhere(['publish' => 'AVP Portal (Public)']);
+        $this->public = true;
         return $this;
     }
 
@@ -160,7 +161,7 @@ class AssignmentQuery extends ElementQuery
         return $this;
     }
 
-        public function withSectors($sectorIds): self
+    public function withSectors($sectorIds): self
     {
         if (empty($sectorIds)) {
             return $this;
@@ -170,9 +171,11 @@ class AssignmentQuery extends ElementQuery
             $sectorIds = [$sectorIds];
         }
 
+        $field = Craft::$app->getFields()->getFieldByHandle('assignmentSectors');
+
         return $this->relatedTo([
             'targetElement' => $sectorIds,
-            'field' => 'assignmentSectors'
+            'field' => $field?->id,
         ]);
     }
 
@@ -261,6 +264,10 @@ class AssignmentQuery extends ElementQuery
 
         if ($this->hybridVolunteeringNature) {
             $this->subQuery->andWhere(Db::parseParam('salesforce_assignments.hybridVolunteeringNature', $this->hybridVolunteeringNature))->andWhere(['salesforce_assignments.publish' => 'AVP Portal (Public)']);
+        }
+
+        if ($this->public) {
+            $this->subQuery->andWhere(['salesforce_assignments.publish' => 'AVP Portal (Public)']);
         }
 
         return parent::beforePrepare();
