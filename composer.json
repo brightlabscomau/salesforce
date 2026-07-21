@@ -21,6 +21,9 @@
     "craftcms/phpstan": "dev-main",
     "craftcms/rector": "dev-main"
   },
+  "suggest": {
+    "putyourlightson/craft-blitz": "Enables cache refresh for updated assignments after sync"
+  },
   "autoload": {
     "psr-4": {
       "brightlabs\\craftsalesforce\\": "src/"

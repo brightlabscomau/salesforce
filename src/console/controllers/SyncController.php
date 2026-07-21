@@ -29,6 +29,7 @@ class SyncController extends Controller
     protected $salesforceToken;
     protected $salesforcePublishUpdates = [];
     protected $salesforceUnpublishUpdates = [];
+    protected $updatedAssignmentIds = [];
 
     protected $json = [];
 
@@ -173,6 +174,8 @@ class SyncController extends Controller
 
         $this->publishAssignments();
 
+        $this->refreshBlitzCache();
+
         $this->endTime = new DateTime();
         $this->timeElapsed = $this->endTime->diff($this->startTime);
 
@@ -210,6 +213,8 @@ class SyncController extends Controller
                     ->anyStatus()
                     ->positionId($record->Position_ID__c)
                     ->one() ?? new Assignment();
+
+                $originalJsonContent = $assignment->jsonContent;
 
                 $assignment->title = $record->Name;
                 $assignment->salesforceId = (string) $record->Id;
@@ -272,6 +277,10 @@ class SyncController extends Controller
 
                 Salesforce::getInstance()->assignment->saveAssignment($assignment);
                 Logs::log("({$this->processedRecords}/{$this->totalRecords}) Processed: {$assignment->title} - {$assignment->salesforceId}:{$assignment->positionId}", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+
+                if ($assignment->jsonContent !== $originalJsonContent) {
+                    $this->updatedAssignmentIds[] = $assignment->id;
+                }
 
                 if (!empty($record->PD_Link__c)) {
                     Logs::log("({$this->processedRecords}/{$this->totalRecords}) Existing(PD_Link__c): {$record->PD_Link__c}", $this->logEntries, ['fgColor' => Console::FG_BLUE]);
@@ -343,6 +352,7 @@ class SyncController extends Controller
             $assignment->enabled = false;
             $assignment->publish = 'Draft';
             Salesforce::getInstance()->assignment->saveAssignment($assignment);
+            $this->updatedAssignmentIds[] = $assignment->id;
 
             return true;
         }
@@ -366,6 +376,20 @@ class SyncController extends Controller
         $this->batchUnpublishOnSalesforce($this->salesforceUnpublishUpdates);
     }
 
+    protected function refreshBlitzCache()
+    {
+        if (empty($this->updatedAssignmentIds) || !Craft::$app->getPlugins()->isPluginEnabled('blitz')) {
+            return;
+        }
+
+        $tags = array_map(fn($id) => "assignment-{$id}", array_unique($this->updatedAssignmentIds));
+
+        \putyourlightson\blitz\Blitz::$plugin->refreshCache->refreshCacheTags($tags);
+        \putyourlightson\blitz\Blitz::$plugin->refreshCache->refresh();
+
+        Logs::log("Blitz cache refreshed for " . count($tags) . " assignment(s)", $this->logEntries, ['fgColor' => Console::FG_GREEN]);
+    }
+
     protected function unpublishAssignments()
     {
         // Get all Salesforce IDs that should be published
@@ -386,6 +410,7 @@ class SyncController extends Controller
                 $assignment->enabled = false;
                 $assignment->publish = 'Draft';
                 Salesforce::getInstance()->assignment->saveAssignment($assignment);
+                $this->updatedAssignmentIds[] = $assignment->id;
 
                 $this->salesforceUnpublishUpdates[] = [
                     'id' => $assignment->salesforceId
